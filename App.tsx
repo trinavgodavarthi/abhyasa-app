@@ -48,8 +48,9 @@ const MainAppContent = () => {
              <div className="size-12 rounded bg-rpg-slate border-2 border-white/20 pixelated overflow-hidden" 
                   style={{ backgroundImage: `url('https://picsum.photos/seed/${user.username}/100')`, backgroundSize: 'cover' }}>
              </div>
-             <div>
-               <p className="text-[10px] font-bold text-gray-400 uppercase">Lvl {user.level} {user.characterClass || 'Paladin'}</p>
+             <div className="hidden sm:block">
+               <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">LVL {user.level}</p>
+               <p className="text-[8px] font-pixel text-primary uppercase">{user.characterClass || 'Paladin'}</p>
              </div>
           </div>
 
@@ -74,10 +75,14 @@ const MainAppContent = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="bg-black/40 px-3 py-1 rounded border-2 border-primary/40 flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-black/40 px-3 py-1.5 rounded border-2 border-orange-500/40 flex items-center gap-2 group hover:border-orange-500 transition-colors">
+              <span className="material-symbols-outlined text-orange-500 text-sm animate-pulse">local_fire_department</span>
+              <span className="font-pixel text-[10px] text-orange-500">{user.dailyStreak || 0}</span>
+            </div>
+            <div className="bg-black/40 px-3 py-1.5 rounded border-2 border-primary/40 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-sm">monetization_on</span>
-              <span className="font-pixel text-xs text-primary">{user.gold} G</span>
+              <span className="font-pixel text-[10px] text-primary">{user.gold} G</span>
             </div>
             <button onClick={() => setActiveTab('settings')} className="p-2 hover:bg-white/10 text-gray-500 hover:text-white rounded transition-colors">
               <span className="material-symbols-outlined">settings</span>
@@ -109,7 +114,7 @@ const MainAppContent = () => {
       <nav className="bg-rpg-deep-slate border-t-4 border-black p-2 z-50">
         <div className="max-w-xl mx-auto flex justify-around">
           <NavBtn active={activeTab === 'hero'} onClick={() => setActiveTab('hero')} icon="shield_person" label="Hero" />
-          <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
+          <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests'} icon="swords" label="Quests" />
           <NavBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon="backpack" label="Items" />
           <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="history_edu" label="Habits" />
           <NavBtn active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon="storefront" label="Shop" />

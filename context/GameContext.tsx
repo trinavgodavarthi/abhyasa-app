@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserData, Task, Habit, Reward, Category, CharacterClass, Trophy, AttributeType } from '../types';
 import { useGameLogic } from '../hooks/useGameLogic';
 import { storage } from '../lib/storage';
-import { startOfDay, differenceInDays } from 'date-fns';
+import { startOfDay, differenceInDays, isYesterday, isToday } from 'date-fns';
 
 interface GameContextType {
   user: UserData | null;
@@ -21,7 +21,7 @@ interface GameContextType {
   completeTask: (task: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskTime: (taskId: string, minutes: number) => Promise<void>;
-  addHabit: (title: string, targetDays?: number) => Promise<void>;
+  addHabit: (title: string, targetDays?: number, dailyTimeGoal?: number) => Promise<void>;
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<void>;
   completeHabit: (habit: Habit) => Promise<void>;
   deleteHabit: (habitId: string) => Promise<void>;
@@ -72,21 +72,39 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userHabits = await storage.getHabits(username);
       
       let updatedHP = userData.hp;
-      const lastLogin = userData.lastLogin ? new Date(userData.lastLogin) : new Date();
-      const daysMissed = differenceInDays(startOfDay(new Date()), startOfDay(lastLogin));
+      let dailyStreak = userData.dailyStreak || 0;
+      const lastLoginDate = userData.lastLogin ? new Date(userData.lastLogin) : null;
+      const today = startOfDay(new Date());
       
+      if (lastLoginDate) {
+        if (isYesterday(lastLoginDate)) {
+          dailyStreak += 1;
+        } else if (!isToday(lastLoginDate)) {
+          dailyStreak = 1;
+        }
+      } else {
+        dailyStreak = 1;
+      }
+
+      const daysMissed = lastLoginDate ? differenceInDays(today, startOfDay(lastLoginDate)) : 0;
       if (daysMissed > 1) {
         const penalty = (daysMissed - 1) * 5;
         updatedHP = Math.max(0, userData.hp - penalty);
-        await storage.updateUser(username, { hp: updatedHP, lastLogin: new Date().toISOString() });
       }
 
       if (!userData.stats) {
         userData.stats = { str: 0, int: 0, foc: 0 };
-        await storage.updateUser(username, { stats: userData.stats });
       }
 
-      setUser({ ...userData, hp: updatedHP });
+      const updatedUserData = { 
+        ...userData, 
+        hp: updatedHP, 
+        dailyStreak, 
+        lastLogin: today.toISOString() 
+      };
+      
+      await storage.updateUser(username, updatedUserData);
+      setUser(updatedUserData);
       setTasks(userTasks);
       setHabits(userHabits.map((h: any) => ({ ...h, targetDays: h.targetDays || 21 })));
     }
@@ -98,7 +116,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (existing) throw new Error("Hero name already taken!");
     
     const newUser: UserData = {
-      username: u, password: p, level: 1, xp: 0, gold: 50, hp: 100,
+      username: u, password: p, level: 1, xp: 0, gold: 100, hp: 100, dailyStreak: 1,
       lastLogin: new Date().toISOString(), inventory: [], characterClass: 'Paladin',
       categories: DEFAULT_CATEGORIES, trophies: [],
       stats: { str: 0, int: 0, foc: 0 }
@@ -126,7 +144,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetProgress = async () => {
     if (!user) return;
     const resetUser: UserData = {
-      ...user, level: 1, xp: 0, gold: 50, hp: 100, inventory: [], trophies: [],
+      ...user, level: 1, xp: 0, gold: 50, hp: 100, dailyStreak: 1, inventory: [], trophies: [],
       stats: { str: 0, int: 0, foc: 0 }
     };
     await storage.setUser(user.username, resetUser);
@@ -204,9 +222,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, timeSpent: newTimeSpent } : t));
   };
 
-  const addHabit = async (title: string, targetDays: number = 21) => {
+  const addHabit = async (title: string, targetDays: number = 21, dailyTimeGoal: number = 0) => {
     if (!user) return;
-    const newHabit = await storage.addHabit(user.username, { title, currentStreak: 0, lastCompleted: null, mastered: false, targetDays });
+    const newHabit = await storage.addHabit(user.username, { title, currentStreak: 0, lastCompleted: null, mastered: false, targetDays, dailyTimeGoal });
     setHabits(prev => [...prev, newHabit]);
   };
 
@@ -277,17 +295,50 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const item = user.inventory.find(i => i.id === itemId);
     if (!item) return;
+    
     let updatedInventory = [...user.inventory];
-    let hpChange = 0;
-    if (item.rewardId === '2') hpChange = 20;
-    const newHP = Math.min(100, user.hp + hpChange);
+    let newHP = user.hp;
+    let newXP = user.xp;
+    let newLevel = user.level;
+    let newStats = { ...user.stats };
+
+    // Item Effects
+    switch (item.rewardId) {
+      case '2': // Healing Salve
+        newHP = Math.min(100, user.hp + 20);
+        break;
+      case '3': // Tome of Insight
+        newXP += 250;
+        const reqXP = getRequiredXP(newLevel);
+        if (newXP >= reqXP) {
+          newXP -= reqXP;
+          newLevel += 1;
+        }
+        break;
+      case '4': // Stat Elixir
+        newStats.str += 10;
+        newStats.int += 10;
+        newStats.foc += 10;
+        break;
+    }
+
     if (item.quantity > 1) {
       updatedInventory = updatedInventory.map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i);
     } else {
       updatedInventory = updatedInventory.filter(i => i.id !== itemId);
     }
-    await storage.updateUser(user.username, { inventory: updatedInventory, hp: newHP });
-    setUser({ ...user, inventory: updatedInventory, hp: newHP });
+
+    const updatedUser = { 
+      ...user, 
+      inventory: updatedInventory, 
+      hp: newHP, 
+      xp: newXP, 
+      level: newLevel,
+      stats: newStats
+    };
+    
+    await storage.updateUser(user.username, updatedUser);
+    setUser(updatedUser);
   };
 
   const updateHP = async (amount: number) => {

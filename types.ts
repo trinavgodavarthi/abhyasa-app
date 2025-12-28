@@ -27,6 +27,7 @@ export interface UserData {
   xp: number;
   gold: number;
   hp: number;
+  dailyStreak: number; // Added: App-wide login streak
   lastLogin: any;
   inventory: InventoryItem[];
   characterClass?: CharacterClass;
@@ -68,7 +69,8 @@ export interface Habit {
   currentStreak: number;
   lastCompleted: any;
   mastered: boolean; 
-  targetDays: number; // Custom goal target
+  targetDays: number;
+  dailyTimeGoal?: number;
 }
 
 export interface Reward {

@@ -4,10 +4,10 @@ import { useGame } from '../context/GameContext';
 import { Reward } from '../types';
 
 export const REWARDS: Reward[] = [
-  { id: '1', title: 'Streak Freeze', description: 'Recover a missed habit day.', cost: 300, type: 'item', icon: 'science' },
-  { id: '2', title: 'Power Nap', description: 'Instantly restore 20 HP.', cost: 150, type: 'buff', icon: 'bedtime' },
-  { id: '3', title: 'Gaming Session', description: 'Redeem 1 hour of guilt-free play.', cost: 500, type: 'irl', icon: 'sports_esports' },
-  { id: '4', title: 'Favorite Treat', description: 'Redeem for a snack of choice.', cost: 400, type: 'irl', icon: 'local_pizza' },
+  { id: '1', title: 'Streak Freeze', description: 'Protect your habit streaks from resetting for one missed day.', cost: 300, type: 'item', icon: 'ac_unit' },
+  { id: '2', title: 'Healing Salve', description: 'Restore 20 Health Points instantly.', cost: 100, type: 'item', icon: 'medical_services' },
+  { id: '3', title: 'Tome of Insight', description: 'Gain 250 Experience Points toward your next level.', cost: 400, type: 'item', icon: 'auto_stories' },
+  { id: '4', title: 'Stat Elixir', description: 'Grant +10 to all primary attributes (STR, INT, FOC).', cost: 600, type: 'buff', icon: 'experiment' },
 ];
 
 const Shop: React.FC = () => {
@@ -32,7 +32,7 @@ const Shop: React.FC = () => {
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
       <div className="text-center">
         <h2 className="font-pixel text-primary text-2xl tracking-tighter mb-2">THE MERCHANT'S WARES</h2>
-        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em]">EXCHANGE GOLD FOR POWER AND PLEASURE</p>
+        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em]">EXCHANGE GOLD FOR ARCANE POWER</p>
       </div>
 
       {msg && (
@@ -66,13 +66,6 @@ const Shop: React.FC = () => {
              </div>
           </div>
         ))}
-
-        <div className="bg-[#1e293b] border-4 border-dashed border-[#475569] p-1 shadow-pixel opacity-50 group">
-           <div className="bg-black/20 border-2 border-dashed border-white/5 p-6 flex flex-col items-center justify-center h-full gap-4">
-              <span className="material-symbols-outlined text-4xl text-gray-500">lock</span>
-              <p className="font-pixel text-[8px] text-gray-500 uppercase">Mystery Item</p>
-           </div>
-        </div>
       </div>
     </div>
   );
