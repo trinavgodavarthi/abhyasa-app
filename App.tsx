@@ -13,7 +13,7 @@ import SageGuide from './components/SageGuide';
 import { useGameLogic } from './hooks/useGameLogic';
 
 const MainAppContent = () => {
-  const { user, loading, logout } = useGame();
+  const { user, loading } = useGame();
   const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop' | 'inventory' | 'settings' | 'trophies' | 'guide'>('hero');
   const [showCRT, setShowCRT] = useState(true);
   const { getRequiredXP } = useGameLogic();
@@ -30,8 +30,9 @@ const MainAppContent = () => {
   }, [showCRT]);
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen font-pixel text-primary animate-pulse">
-      LOADING SESSION...
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background-dark font-pixel text-primary gap-6 animate-pulse">
+      <div className="size-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p className="tracking-widest text-[10px]">PREPARING YOUR LEGEND...</p>
     </div>
   );
 
@@ -40,60 +41,79 @@ const MainAppContent = () => {
   const reqXP = getRequiredXP(user.level);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Top HUD */}
-      <header className="bg-black/60 border-b-4 border-rpg-deep-slate p-4 z-40">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActiveTab('hero')}>
-             <div className="size-12 rounded bg-rpg-slate border-2 border-white/20 pixelated overflow-hidden" 
-                  style={{ backgroundImage: `url('https://picsum.photos/seed/${user.username}/100')`, backgroundSize: 'cover' }}>
+    <div className="flex flex-col h-screen overflow-hidden selection:bg-primary selection:text-black">
+      {/* Top HUD - Advanced RPG Dashboard Header */}
+      <header className="bg-black/80 border-b-4 border-rpg-deep-slate p-4 z-40 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-6">
+          
+          {/* Avatar & Class Info */}
+          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setActiveTab('hero')}>
+             <div className="relative">
+               <div className="size-14 rounded-none bg-rpg-deep-slate border-4 border-primary/40 group-hover:border-primary pixelated overflow-hidden transition-all shadow-[0_0_15px_rgba(242,204,13,0.1)]">
+                  <div className="w-full h-full bg-cover bg-center" 
+                       style={{ backgroundImage: `url('https://picsum.photos/seed/${user.username}/100')` }}>
+                  </div>
+               </div>
+               <div className="absolute -bottom-2 -right-2 bg-primary text-black font-pixel text-[6px] px-1 py-0.5 border border-black shadow-sm">
+                 LVL {user.level}
+               </div>
              </div>
              <div className="hidden sm:block">
-               <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">LVL {user.level}</p>
-               <p className="text-[8px] font-pixel text-primary uppercase">{user.characterClass || 'Paladin'}</p>
+               <p className="text-[10px] font-black text-white uppercase leading-none mb-1 tracking-tighter">{user.username}</p>
+               <p className="text-[7px] font-pixel text-primary uppercase opacity-70">{user.characterClass || 'Paladin'}</p>
              </div>
           </div>
 
-          <div className="flex-1 max-w-md space-y-2">
-            <div className="group">
-              <div className="flex justify-between text-[10px] font-pixel px-1 text-rpg-red">
-                <span>HP</span>
-                <span>{user.hp}/100</span>
+          {/* Vitals & Progress Section */}
+          <div className="flex-1 max-w-sm space-y-3">
+            <div className="relative">
+              <div className="flex justify-between text-[7px] font-pixel px-1 text-rpg-red/80 mb-1 uppercase">
+                <span>Vitals</span>
+                <span>{user.hp}%</span>
               </div>
-              <div className="h-2 w-full bg-red-900/30 rounded-none border border-black overflow-hidden">
-                <div className="h-full bg-rpg-red transition-all duration-500" style={{ width: `${user.hp}%` }}></div>
+              <div className="h-2 w-full bg-black/60 rounded-none border border-white/5 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-rpg-red/60 to-rpg-red transition-all duration-700 shadow-[0_0_8px_rgba(194,94,73,0.4)]" style={{ width: `${user.hp}%` }}></div>
               </div>
             </div>
-            <div className="group">
-              <div className="flex justify-between text-[10px] font-pixel px-1 text-rpg-green">
-                <span>XP</span>
-                <span>{user.xp}/{reqXP}</span>
+            <div className="relative">
+              <div className="flex justify-between text-[7px] font-pixel px-1 text-rpg-green/80 mb-1 uppercase">
+                <span>Progress</span>
+                <span>{user.xp} / {reqXP}</span>
               </div>
-              <div className="h-2 w-full bg-green-900/30 rounded-none border border-black overflow-hidden">
-                <div className="h-full bg-rpg-green transition-all duration-500" style={{ width: `${(user.xp / reqXP) * 100}%` }}></div>
+              <div className="h-2 w-full bg-black/60 rounded-none border border-white/5 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-rpg-green/60 to-rpg-green transition-all duration-700 shadow-[0_0_8px_rgba(122,196,86,0.4)]" style={{ width: `${(user.xp / reqXP) * 100}%` }}></div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="bg-black/40 px-3 py-1.5 rounded border-2 border-orange-500/40 flex items-center gap-2 group hover:border-orange-500 transition-colors">
-              <span className="material-symbols-outlined text-orange-500 text-sm animate-pulse">local_fire_department</span>
-              <span className="font-pixel text-[10px] text-orange-500">{user.dailyStreak || 0}</span>
+          {/* Currencies & Quick Stats */}
+          <div className="flex items-center gap-4">
+            <div className="bg-black/40 px-3 py-2 border-2 border-orange-500/20 flex items-center gap-3 group transition-all hover:border-orange-500 hover:shadow-[0_0_10px_rgba(249,115,22,0.2)]">
+              <span className="material-symbols-outlined text-orange-500 text-lg animate-pulse">local_fire_department</span>
+              <div>
+                <p className="text-[6px] text-gray-500 font-pixel uppercase leading-none mb-1">STREAK</p>
+                <p className="font-pixel text-[10px] text-orange-500 leading-none">{user.dailyStreak || 0}</p>
+              </div>
             </div>
-            <div className="bg-black/40 px-3 py-1.5 rounded border-2 border-primary/40 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-sm">monetization_on</span>
-              <span className="font-pixel text-[10px] text-primary">{user.gold} G</span>
+            
+            <div className="bg-black/40 px-3 py-2 border-2 border-primary/20 flex items-center gap-3 transition-all hover:border-primary">
+              <span className="material-symbols-outlined text-primary text-lg">payments</span>
+              <div>
+                <p className="text-[6px] text-gray-500 font-pixel uppercase leading-none mb-1">GOLD</p>
+                <p className="font-pixel text-[10px] text-primary leading-none tabular-nums">{user.gold}</p>
+              </div>
             </div>
-            <button onClick={() => setActiveTab('settings')} className="p-2 hover:bg-white/10 text-gray-500 hover:text-white rounded transition-colors">
-              <span className="material-symbols-outlined">settings</span>
+
+            <button onClick={() => setActiveTab('settings')} className="size-10 flex items-center justify-center hover:bg-white/5 text-gray-500 hover:text-primary transition-all rounded">
+              <span className="material-symbols-outlined text-2xl">tune</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]">
-        <div className="max-w-6xl mx-auto pb-20">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] bg-background-dark/95">
+        <div className="max-w-6xl mx-auto pb-24">
           {activeTab === 'hero' && <Hero 
             onInventoryOpen={() => setActiveTab('inventory')} 
             onConfigOpen={() => setActiveTab('settings')}
@@ -110,11 +130,11 @@ const MainAppContent = () => {
         </div>
       </main>
 
-      {/* Navigation Footer */}
-      <nav className="bg-rpg-deep-slate border-t-4 border-black p-2 z-50">
+      {/* Navigation Footer - Solid RPG Panel */}
+      <nav className="bg-rpg-deep-slate border-t-4 border-black p-3 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <div className="max-w-xl mx-auto flex justify-around">
           <NavBtn active={activeTab === 'hero'} onClick={() => setActiveTab('hero')} icon="shield_person" label="Hero" />
-          <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests'} icon="swords" label="Quests" />
+          <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
           <NavBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon="backpack" label="Items" />
           <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="history_edu" label="Habits" />
           <NavBtn active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon="storefront" label="Shop" />
@@ -127,10 +147,11 @@ const MainAppContent = () => {
 const NavBtn = ({ active, onClick, icon, label }: any) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 p-2 transition-all ${active ? 'text-primary scale-110' : 'text-gray-500 hover:text-white'}`}
+    className={`flex flex-col items-center gap-1.5 p-2 px-4 transition-all duration-300 rounded-lg group
+      ${active ? 'text-primary scale-110 bg-black/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
   >
-    <span className="material-symbols-outlined text-2xl">{icon}</span>
-    <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
+    <span className={`material-symbols-outlined text-2xl transition-transform ${active ? 'fill-1' : 'group-hover:scale-110'}`}>{icon}</span>
+    <span className={`text-[8px] font-pixel uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
   </button>
 );
 
