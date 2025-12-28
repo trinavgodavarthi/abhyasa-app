@@ -347,4 +347,60 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     let shouldRemove = false;
     
-    if (item
+    if (item.durability !== undefined) {
+      item.durability -= 1;
+      if (item.durability <= 0) {
+        if (item.quantity > 1) {
+          item.quantity -= 1;
+          item.durability = 3; 
+        } else {
+          shouldRemove = true;
+        }
+      }
+    } else {
+      if (item.quantity > 1) {
+        inventory[itemIndex].quantity -= 1;
+      } else {
+        shouldRemove = true;
+      }
+    }
+
+    if (shouldRemove) {
+      inventory.splice(itemIndex, 1);
+    }
+    
+    const updates = { 
+      inventory, 
+      hp: Math.min(100, user.hp + hpGain),
+      lastLogin: now.toISOString() 
+    };
+    await storage.updateUser(user.username, updates);
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const updateHP = async (amount: number) => {
+    if (!user) return;
+    const now = new Date().toISOString();
+    const updates = { 
+      hp: Math.min(100, Math.max(0, user.hp + amount)),
+      lastLogin: now
+    };
+    await storage.updateUser(user.username, updates);
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  return (
+    <GameContext.Provider value={{ 
+      user, loading, signup, login, logout, resetProgress, updateUserClass, addCategory, deleteCategory, tasks, habits, 
+      addQuest, completeTask, deleteTask, addHabit, completeHabit, deleteHabit, buyReward, useItem, updateHP 
+    }}>
+      {children}
+    </GameContext.Provider>
+  );
+};
+
+export const useGame = () => {
+  const context = useContext(GameContext);
+  if (!context) throw new Error("useGame must be used within GameProvider");
+  return context;
+};

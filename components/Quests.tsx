@@ -4,6 +4,9 @@ import { useGame } from '../context/GameContext';
 import { Task, Category } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
+type SortField = 'createdAt' | 'difficulty' | 'category';
+type SortOrder = 'asc' | 'desc';
+
 const Quests: React.FC = () => {
   const { user, tasks, completeTask, deleteTask, addQuest } = useGame();
   const [showAdd, setShowAdd] = useState(false);
@@ -11,6 +14,8 @@ const Quests: React.FC = () => {
   const [newDiff, setNewDiff] = useState<'easy' | 'medium' | 'hard'>('easy');
   const [newCatId, setNewCatId] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   // Set default category when user or categories change
@@ -80,13 +85,40 @@ const Quests: React.FC = () => {
     }
   };
 
-  const filteredTasks = useMemo(() => {
-    if (selectedCategories.length === 0) return tasks;
-    return tasks.filter(t => selectedCategories.includes(t.category));
-  }, [tasks, selectedCategories]);
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
 
-  const activeQuests = [...filteredTasks].filter(t => !t.completed).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const completedQuests = filteredTasks.filter(t => t.completed);
+  const diffWeight = { easy: 1, medium: 2, hard: 3 };
+
+  const sortedAndFilteredTasks = useMemo(() => {
+    let list = [...tasks];
+    
+    // Filter
+    if (selectedCategories.length > 0) {
+      list = list.filter(t => selectedCategories.includes(t.category));
+    }
+
+    // Sort
+    list.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'createdAt') {
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortBy === 'difficulty') {
+        comparison = diffWeight[a.difficulty] - diffWeight[b.difficulty];
+      } else if (sortBy === 'category') {
+        const catA = user?.categories.find(c => c.id === a.category)?.label || '';
+        const catB = user?.categories.find(c => c.id === b.category)?.label || '';
+        comparison = catA.localeCompare(catB);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return list;
+  }, [tasks, selectedCategories, sortBy, sortOrder, user?.categories]);
+
+  const activeQuests = sortedAndFilteredTasks.filter(t => !t.completed);
+  const completedQuests = sortedAndFilteredTasks.filter(t => t.completed);
 
   if (!user) return null;
 
@@ -95,13 +127,13 @@ const Quests: React.FC = () => {
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
       
       <div className="relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 border-b-4 border-rpg-slate/20 pb-4 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b-4 border-rpg-slate/20 pb-4 gap-4">
            <div>
              <h2 className="text-4xl font-black text-[#3d2b1f] tracking-tighter drop-shadow-sm flex items-center gap-3">
                <span className="material-symbols-outlined text-4xl">feed</span>
                QUEST LOG
              </h2>
-             <p className="text-[#5c4033] font-bold text-sm tracking-wide uppercase">Total Missions: {filteredTasks.length}</p>
+             <p className="text-[#5c4033] font-bold text-sm tracking-wide uppercase">Total Missions: {sortedAndFilteredTasks.length}</p>
            </div>
            
            <div className="flex gap-2">
@@ -115,23 +147,51 @@ const Quests: React.FC = () => {
            </div>
         </div>
 
-        {/* Dynamic Multi-Select Filter Bar */}
-        <div className="flex flex-wrap gap-2 mb-8">
-           <FilterBtn 
-             active={selectedCategories.length === 0} 
-             onClick={() => toggleFilter('all')} 
-             label="All Quests" 
-             icon="apps" 
-           />
-           {user.categories.map(cat => (
+        {/* Multi-Select Filter Bar */}
+        <div className="mb-6">
+          <label className="text-[#3d2b1f] text-[10px] font-pixel block mb-2 uppercase opacity-60 tracking-wider">Filter by Category</label>
+          <div className="flex flex-wrap gap-2">
              <FilterBtn 
-              key={cat.id} 
-              active={selectedCategories.includes(cat.id)} 
-              onClick={() => toggleFilter(cat.id)} 
-              label={cat.label} 
-              icon={cat.icon} 
-            />
-           ))}
+               active={selectedCategories.length === 0} 
+               onClick={() => toggleFilter('all')} 
+               label="All Quests" 
+               icon="apps" 
+             />
+             {user.categories.map(cat => (
+               <FilterBtn 
+                key={cat.id} 
+                active={selectedCategories.includes(cat.id)} 
+                onClick={() => toggleFilter(cat.id)} 
+                label={cat.label} 
+                icon={cat.icon} 
+              />
+             ))}
+          </div>
+        </div>
+
+        {/* Refined Sorting Controls */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 p-4 bg-black/5 rounded border-2 border-[#3d2b1f]/10 shadow-inner">
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="text-[#3d2b1f] text-[10px] font-pixel uppercase opacity-60">Sort Field:</label>
+            <div className="flex gap-1">
+               <SortFieldBtn active={sortBy === 'createdAt'} label="Date" onClick={() => setSortBy('createdAt')} />
+               <SortFieldBtn active={sortBy === 'difficulty'} label="Difficulty" onClick={() => setSortBy('difficulty')} />
+               <SortFieldBtn active={sortBy === 'category'} label="Category" onClick={() => setSortBy('category')} />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="text-[#3d2b1f] text-[10px] font-pixel uppercase opacity-60">Direction:</label>
+            <button 
+              onClick={toggleSortOrder}
+              className="bg-[#3d2b1f] text-primary px-4 py-2 border-2 border-[#3d2b1f] font-pixel text-[8px] uppercase tracking-tighter flex items-center gap-2 shadow-md hover:bg-[#4d3a2b] transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+              </span>
+              {sortOrder === 'asc' ? 'ASC' : 'DESC'}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -155,14 +215,14 @@ const Quests: React.FC = () => {
 
         {completedQuests.length > 0 && (
           <div className="mt-20 opacity-60">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4 border-t-4 border-[#3d2b1f]/10 pt-8">
               <h3 className="font-pixel text-[10px] text-[#3d2b1f] uppercase tracking-widest">Completed Archive</h3>
             </div>
             <div className="space-y-2">
               {completedQuests.map(task => {
                 const cat = user.categories.find(c => c.id === task.category);
                 return (
-                  <div key={task.id} className="flex items-center gap-4 bg-black/5 p-3 rounded group">
+                  <div key={task.id} className="flex items-center gap-4 bg-black/5 p-3 rounded group border border-transparent hover:border-[#3d2b1f]/20 transition-all">
                     <span className="material-symbols-outlined text-[#3d2b1f]/40">check_circle</span>
                     <div className="flex-1 flex items-center gap-2">
                       <span className="font-bold text-sm text-[#3d2b1f]/70 line-through truncate">{task.title}</span>
@@ -184,6 +244,7 @@ const Quests: React.FC = () => {
         )}
       </div>
 
+      {/* Add Quest Modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-rpg-deep-slate p-1 rounded border-4 border-rpg-slate shadow-2xl max-w-2xl w-full">
@@ -211,7 +272,7 @@ const Quests: React.FC = () => {
                     required
                     value={newTitle}
                     onChange={e => setNewTitle(e.target.value)}
-                    className="w-full bg-black/40 text-white p-4 border-2 border-rpg-slate outline-none focus:border-primary" 
+                    className="w-full bg-black/40 text-white p-4 border-2 border-rpg-slate outline-none focus:border-primary font-display" 
                     placeholder="E.G. DEFEAT THE INBOX DRAGON..."
                   />
                 </div>
@@ -257,10 +318,20 @@ const Quests: React.FC = () => {
 const FilterBtn = ({ active, onClick, label, icon }: any) => (
   <button 
     onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2 border-2 transition-all font-pixel text-[8px] uppercase tracking-tighter
+    className={`flex items-center gap-2 px-3 py-1.5 border-2 transition-all font-pixel text-[8px] uppercase tracking-tighter
       ${active ? 'bg-[#3d2b1f] border-[#3d2b1f] text-primary shadow-inner' : 'bg-transparent border-[#3d2b1f]/20 text-[#3d2b1f]/60 hover:border-[#3d2b1f]/40'}`}
   >
     <span className="material-symbols-outlined text-sm">{icon}</span>
+    {label}
+  </button>
+);
+
+const SortFieldBtn = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => (
+  <button 
+    onClick={onClick}
+    className={`px-3 py-1.5 border-2 font-pixel text-[8px] uppercase tracking-tighter flex items-center gap-1 transition-all
+      ${active ? 'bg-primary border-[#3d2b1f] text-black shadow-sm' : 'bg-transparent border-[#3d2b1f]/10 text-[#3d2b1f]/60 hover:border-[#3d2b1f]/30'}`}
+  >
     {label}
   </button>
 );
@@ -270,7 +341,7 @@ const SelectBtn = ({ active, onClick, label }: any) => (
     type="button"
     onClick={onClick}
     className={`p-3 border-2 transition-all flex flex-col items-center justify-center font-pixel text-[8px] tracking-tighter truncate
-      ${active ? `bg-primary border-white text-black shadow-lg` : 'bg-black/40 border-rpg-slate text-gray-500'}`}
+      ${active ? `bg-primary border-white text-black shadow-lg` : 'bg-black/40 border-rpg-slate text-gray-500 hover:text-white'}`}
   >
     {label}
   </button>
@@ -299,7 +370,7 @@ const QuestItem = ({ task, categories, onComplete, onDelete }: { task: Task; cat
             <span className={`text-white text-[8px] font-pixel px-2 py-0.5 rounded ${category.color} tracking-widest uppercase shadow-sm`}>
               {category.label}
             </span>
-            <h3 className="text-[#3d2b1f] text-lg font-black truncate">{task.title}</h3>
+            <h3 className="text-[#3d2b1f] text-lg font-black truncate drop-shadow-sm">{task.title}</h3>
           </div>
         </div>
         <div className="flex gap-2">
