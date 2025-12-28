@@ -3,7 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { GoogleGenAI } from "@google/genai";
 
-const Hero: React.FC = () => {
+interface HeroProps {
+  onInventoryOpen?: () => void;
+  onConfigOpen?: () => void;
+}
+
+const Hero: React.FC<HeroProps> = ({ onInventoryOpen, onConfigOpen }) => {
   const { user } = useGame();
   const [prophecy, setProphecy] = useState<string>('');
   const [loadingProphecy, setLoadingProphecy] = useState(false);
@@ -19,11 +24,10 @@ const Hero: React.FC = () => {
     if (!process.env.API_KEY || !user) return;
     setLoadingProphecy(true);
     try {
-      // Create a new GoogleGenAI instance right before making an API call
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `You are an RPG Oracle. Give a cryptic but motivating one-sentence daily prophecy for a level ${user.level} Paladin named ${user.username} who is building productive habits.`,
+        contents: `You are an RPG Oracle. Give a cryptic but motivating one-sentence daily prophecy for a level ${user.level} ${user.characterClass || 'Paladin'} named ${user.username} who is building productive habits.`,
       });
       setProphecy(response.text || "The path ahead is clear to those with a steady heart.");
     } catch (e) {
@@ -63,7 +67,7 @@ const Hero: React.FC = () => {
              <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">{user.username}</h2>
              <div className="inline-flex items-center gap-2 bg-black/30 px-4 py-1 rounded">
                <span className="material-symbols-outlined text-primary">military_tech</span>
-               <span className="text-primary font-bold text-sm tracking-widest uppercase">LVL {user.level} PALADIN</span>
+               <span className="text-primary font-bold text-sm tracking-widest uppercase">LVL {user.level} {user.characterClass || 'PALADIN'}</span>
              </div>
           </div>
         </div>
@@ -111,9 +115,9 @@ const Hero: React.FC = () => {
 
         {/* Action Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <ActionCard icon="backpack" label="Inventory" />
+          <ActionCard icon="backpack" label="Inventory" onClick={onInventoryOpen} />
           <ActionCard icon="trophy" label="Trophies" />
-          <ActionCard icon="settings" label="Config" />
+          <ActionCard icon="settings" label="Config" onClick={onConfigOpen} />
           <ActionCard icon="help" label="Guide" />
         </div>
       </div>
@@ -141,8 +145,10 @@ const AttributeBar = ({ icon, color, fill, label, value, max }: any) => (
   </div>
 );
 
-const ActionCard = ({ icon, label }: any) => (
-  <div className="aspect-square bg-rpg-deep-slate rounded border-2 border-rpg-slate hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group p-4 text-center">
+const ActionCard = ({ icon, label, onClick }: any) => (
+  <div 
+    onClick={onClick}
+    className="aspect-square bg-rpg-deep-slate rounded border-2 border-rpg-slate hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group p-4 text-center">
     <span className="material-symbols-outlined text-gray-500 group-hover:text-primary text-4xl">{icon}</span>
     <span className="text-[10px] uppercase font-bold text-gray-400 group-hover:text-white">{label}</span>
   </div>

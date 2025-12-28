@@ -1,11 +1,8 @@
 
 import { initializeApp } from "firebase/app";
-// Use the lite version of firestore to resolve exported member errors in restricted environments
-import { getFirestore } from "firebase/firestore/lite";
 
-// NOTE: In a real app, these would be in environment variables.
-// Since we are building a standalone functional prototype, 
-// replace these with your actual Firebase config if deploying.
+// NOTE: Replace these values with your actual Firebase project configuration 
+// from the Firebase Console (Settings > General > Your apps).
 const firebaseConfig = {
   apiKey: "AIzaSy_MOCK_KEY",
   authDomain: "abhyasa-productivity.firebaseapp.com",
@@ -16,4 +13,5 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Firestore is being replaced by local storage mock to resolve environment import errors.
+export const db = {};

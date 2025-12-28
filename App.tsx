@@ -1,17 +1,31 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import Login from './components/Login';
 import Hero from './components/Hero';
 import Quests from './components/Quests';
 import Habits from './components/Habits';
 import Shop from './components/Shop';
+import Inventory from './components/Inventory';
+import Settings from './components/Settings';
 import { useGameLogic } from './hooks/useGameLogic';
 
 const MainAppContent = () => {
   const { user, loading, logout } = useGame();
-  const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop' | 'inventory' | 'settings'>('hero');
+  const [showCRT, setShowCRT] = useState(true);
   const { getRequiredXP } = useGameLogic();
+
+  useEffect(() => {
+    const savedCRT = localStorage.getItem('abhyasa_crt');
+    if (savedCRT !== null) setShowCRT(savedCRT === 'true');
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('abhyasa_crt', String(showCRT));
+    const overlay = document.querySelector('.crt-overlay');
+    if (overlay) (overlay as HTMLElement).style.display = showCRT ? 'block' : 'none';
+  }, [showCRT]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen font-pixel text-primary animate-pulse">
@@ -34,7 +48,7 @@ const MainAppContent = () => {
              </div>
              <div>
                <h1 className="font-pixel text-xs tracking-wider uppercase text-white">{user.username}</h1>
-               <p className="text-[10px] font-bold text-gray-400 uppercase">Lvl {user.level} Paladin</p>
+               <p className="text-[10px] font-bold text-gray-400 uppercase">Lvl {user.level} {user.characterClass || 'Paladin'}</p>
              </div>
           </div>
 
@@ -64,8 +78,8 @@ const MainAppContent = () => {
               <span className="material-symbols-outlined text-primary text-sm">monetization_on</span>
               <span className="font-pixel text-xs text-primary">{user.gold} G</span>
             </div>
-            <button onClick={logout} className="p-2 hover:bg-red-500/10 text-gray-500 hover:text-red-500 rounded transition-colors">
-              <span className="material-symbols-outlined">logout</span>
+            <button onClick={() => setActiveTab('settings')} className="p-2 hover:bg-white/10 text-gray-500 hover:text-white rounded transition-colors">
+              <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
         </div>
@@ -74,10 +88,12 @@ const MainAppContent = () => {
       {/* Main Container */}
       <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]">
         <div className="max-w-6xl mx-auto">
-          {activeTab === 'hero' && <Hero />}
+          {activeTab === 'hero' && <Hero onInventoryOpen={() => setActiveTab('inventory')} onConfigOpen={() => setActiveTab('settings')} />}
           {activeTab === 'quests' && <Quests />}
           {activeTab === 'habits' && <Habits />}
           {activeTab === 'shop' && <Shop />}
+          {activeTab === 'inventory' && <Inventory />}
+          {activeTab === 'settings' && <Settings showCRT={showCRT} onToggleCRT={() => setShowCRT(!showCRT)} />}
         </div>
       </main>
 
@@ -86,7 +102,8 @@ const MainAppContent = () => {
         <div className="max-w-xl mx-auto flex justify-around">
           <NavBtn active={activeTab === 'hero'} onClick={() => setActiveTab('hero')} icon="shield_person" label="Hero" />
           <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
-          <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="history_edu" label="Habits" />
+          <NavBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon="backpack" label="Items" />
+          <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits'} icon="history_edu" label="Habits" />
           <NavBtn active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon="storefront" label="Shop" />
         </div>
       </nav>

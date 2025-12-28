@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Reward } from '../types';
 
-const REWARDS: Reward[] = [
+export const REWARDS: Reward[] = [
   { id: '1', title: 'Streak Freeze', description: 'Recover a missed habit day.', cost: 300, type: 'item', icon: 'science' },
   { id: '2', title: 'Power Nap', description: 'Instantly restore 20 HP.', cost: 150, type: 'buff', icon: 'bedtime' },
   { id: '3', title: 'Gaming Session', description: 'Redeem 1 hour of guilt-free play.', cost: 500, type: 'irl', icon: 'sports_esports' },
@@ -11,7 +11,7 @@ const REWARDS: Reward[] = [
 ];
 
 const Shop: React.FC = () => {
-  const { user, buyReward, updateHP } = useGame();
+  const { user, buyReward } = useGame();
   const [msg, setMsg] = useState('');
 
   const handlePurchase = async (reward: Reward) => {
@@ -21,9 +21,8 @@ const Shop: React.FC = () => {
       return;
     }
 
-    const success = await buyReward(reward.cost);
+    const success = await buyReward(reward);
     if (success) {
-      if (reward.id === '2') await updateHP(20);
       setMsg(`PURCHASED: ${reward.title}`);
       setTimeout(() => setMsg(''), 3000);
     }

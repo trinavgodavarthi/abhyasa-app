@@ -1,5 +1,8 @@
 
 import { differenceInDays, isYesterday, isToday, startOfDay } from 'date-fns';
+import { Habit } from '../types';
+
+export const REGEN_INTERVAL_MS = 5 * 60 * 1000; // 5 Minutes per tick
 
 export const useGameLogic = () => {
   // XP formula: Level N = 100 * 1.5^(N-1)
@@ -29,5 +32,11 @@ export const useGameLogic = () => {
     return { increment: true, reset: true };
   };
 
-  return { getRequiredXP, calculateRewards, processHabitCheck };
+  const calculateRegenAmount = (habits: Habit[]) => {
+    const activeStreaks = habits.filter(h => h.currentStreak > 0).length;
+    // Base 1 HP + 1 HP for every 2 active streaks
+    return 1 + Math.floor(activeStreaks / 2);
+  };
+
+  return { getRequiredXP, calculateRewards, processHabitCheck, calculateRegenAmount };
 };
