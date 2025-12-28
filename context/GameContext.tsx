@@ -69,18 +69,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userData = await storage.getUser(username);
     if (userData) {
       const userTasks = await storage.getTasks(username);
-      const userHabits = await storage.getHabits(username);
+      let userHabits = await storage.getHabits(username);
       
       let updatedHP = userData.hp;
       let dailyStreak = userData.dailyStreak || 0;
       const lastLoginDate = userData.lastLogin ? new Date(userData.lastLogin) : null;
       const today = startOfDay(new Date());
       
+      // Handle daily login and streak
       if (lastLoginDate) {
         if (isYesterday(lastLoginDate)) {
           dailyStreak += 1;
         } else if (!isToday(lastLoginDate)) {
           dailyStreak = 1;
+        }
+        
+        // Reset daily minutes spent if it's a new day
+        if (!isToday(lastLoginDate)) {
+          userHabits = userHabits.map((h: any) => ({ ...h, dailyMinutesSpent: 0 }));
+          // Note: In a real app we'd batch update the DB here
+          for (const h of userHabits) {
+            await storage.updateHabit(username, h.id, { dailyMinutesSpent: 0 });
+          }
         }
       } else {
         dailyStreak = 1;
@@ -92,21 +102,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedHP = Math.max(0, userData.hp - penalty);
       }
 
-      if (!userData.stats) {
-        userData.stats = { str: 0, int: 0, foc: 0 };
-      }
-
       const updatedUserData = { 
         ...userData, 
         hp: updatedHP, 
         dailyStreak, 
-        lastLogin: today.toISOString() 
+        lastLogin: today.toISOString(),
+        stats: userData.stats || { str: 0, int: 0, foc: 0 }
       };
       
       await storage.updateUser(username, updatedUserData);
       setUser(updatedUserData);
       setTasks(userTasks);
-      setHabits(userHabits.map((h: any) => ({ ...h, targetDays: h.targetDays || 21 })));
+      setHabits(userHabits.map((h: any) => ({ 
+        ...h, 
+        targetDays: h.targetDays || 21, 
+        dailyMinutesSpent: h.dailyMinutesSpent || 0 
+      })));
     }
     setLoading(false);
   };
@@ -224,7 +235,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addHabit = async (title: string, targetDays: number = 21, dailyTimeGoal: number = 0) => {
     if (!user) return;
-    const newHabit = await storage.addHabit(user.username, { title, currentStreak: 0, lastCompleted: null, mastered: false, targetDays, dailyTimeGoal });
+    const newHabit = await storage.addHabit(user.username, { title, currentStreak: 0, lastCompleted: null, mastered: false, targetDays, dailyTimeGoal, dailyMinutesSpent: 0 });
     setHabits(prev => [...prev, newHabit]);
   };
 
@@ -259,10 +270,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updatedUser = { ...user, xp: newXP, level: newLevel, gold: user.gold + goldReward, stats: updatedStats };
     await storage.updateUser(user.username, { xp: newXP, level: newLevel, gold: updatedUser.gold, stats: updatedStats });
-    await storage.updateHabit(user.username, habit.id, { currentStreak: newStreak, mastered, lastCompleted });
+    
+    // Also reset daily minutes spent when logging a completion
+    await storage.updateHabit(user.username, habit.id, { currentStreak: newStreak, mastered, lastCompleted, dailyMinutesSpent: 0 });
 
     setUser(updatedUser);
-    setHabits(prev => prev.map(h => h.id === habit.id ? { ...h, currentStreak: newStreak, mastered, lastCompleted } : h));
+    setHabits(prev => prev.map(h => h.id === habit.id ? { ...h, currentStreak: newStreak, mastered, lastCompleted, dailyMinutesSpent: 0 } : h));
     checkTrophies();
   };
 
@@ -302,7 +315,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let newLevel = user.level;
     let newStats = { ...user.stats };
 
-    // Item Effects
     switch (item.rewardId) {
       case '2': // Healing Salve
         newHP = Math.min(100, user.hp + 20);

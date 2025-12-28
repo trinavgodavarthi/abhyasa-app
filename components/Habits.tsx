@@ -32,36 +32,39 @@ const Habits: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in duration-500 pb-12">
-      <div className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel-card flex flex-col gap-6 items-start">
-        <div className="w-full flex justify-between items-center">
+      {/* Header & Add Form */}
+      <div className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel relative">
+        <div className="absolute top-0 right-0 p-4 pointer-events-none opacity-10">
+           <span className="material-symbols-outlined text-8xl">fitness_center</span>
+        </div>
+        
+        <div className="w-full flex justify-between items-center mb-8">
            <div>
-              <h2 className="font-pixel text-primary text-xl mb-2 uppercase">Daily Training</h2>
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest italic opacity-60">Forge your discipline through repetition</p>
-           </div>
-           <div className="hidden sm:block text-[10px] font-pixel text-gray-600 uppercase">
-             Mastery Requires Focus
+              <h2 className="font-pixel text-primary text-xl mb-2 uppercase tracking-tighter">Combat Training</h2>
+              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest italic opacity-60">Sharpen your soul through daily repetition</p>
            </div>
         </div>
-        <form onSubmit={handleAddHabit} className="flex flex-wrap w-full gap-4">
+
+        <form onSubmit={handleAddHabit} className="flex flex-wrap w-full gap-4 relative z-10">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Training Regimen</label>
+            <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Regimen Designation</label>
             <input 
               required
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
-              className="w-full bg-black/40 border-2 border-rpg-slate p-3 text-white font-display focus:border-primary outline-none" 
-              placeholder="E.G. MEDITATION, CODING..."
+              className="w-full bg-black/60 border-2 border-rpg-slate p-4 text-white font-display focus:border-primary outline-none transition-colors" 
+              placeholder="E.G. ARCANE STUDY, PHYSICAL LABOR..."
             />
           </div>
           <div className="w-24">
-            <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Goal (Days)</label>
+            <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Target (Days)</label>
             <input 
               required
               type="number"
               min="1"
               value={newTarget}
               onChange={e => setNewTarget(parseInt(e.target.value))}
-              className="w-full bg-black/40 border-2 border-rpg-slate p-3 text-white font-display focus:border-primary outline-none"
+              className="w-full bg-black/60 border-2 border-rpg-slate p-4 text-white font-display focus:border-primary outline-none"
             />
           </div>
           <div className="w-28">
@@ -72,22 +75,24 @@ const Habits: React.FC = () => {
               min="0"
               value={newTimeGoal}
               onChange={e => setNewTimeGoal(parseInt(e.target.value))}
-              className="w-full bg-black/40 border-2 border-rpg-slate p-3 text-white font-display focus:border-primary outline-none"
+              className="w-full bg-black/60 border-2 border-rpg-slate p-4 text-white font-display focus:border-primary outline-none"
             />
           </div>
           <div className="flex items-end">
-            <button className="bg-primary text-black px-6 py-4 font-pixel text-[10px] border-b-4 border-r-4 border-[#7a7a35] active:border-0 active:translate-y-1 active:translate-x-1 transition-all uppercase tracking-tighter">
+            <button className="bg-primary text-black px-8 py-4 font-pixel text-[10px] border-b-8 border-r-8 border-[#7a7a35] hover:brightness-110 active:border-0 active:translate-y-2 active:translate-x-2 transition-all uppercase tracking-tighter">
               Commence
             </button>
           </div>
         </form>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Habits Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {habits.length === 0 && (
-          <div className="col-span-full py-20 bg-black/20 border-4 border-dashed border-rpg-slate rounded-lg text-center opacity-40">
-             <span className="material-symbols-outlined text-5xl mb-4">history_edu</span>
-             <p className="font-pixel text-[10px]">NO TRAINING REGIMENS DEFINED</p>
+          <div className="col-span-full py-20 bg-black/20 border-4 border-dashed border-rpg-slate rounded text-center opacity-40">
+             <span className="material-symbols-outlined text-6xl mb-4">history_edu</span>
+             <p className="font-pixel text-[10px]">THE ARCHIVES ARE EMPTY</p>
+             <p className="text-xs mt-2 uppercase font-bold">Define your first regimen above</p>
           </div>
         )}
         {habits.map(habit => (
@@ -97,56 +102,58 @@ const Habits: React.FC = () => {
             onComplete={() => completeHabit(habit)} 
             onDelete={() => deleteHabit(habit.id)}
             onEdit={() => setEditingHabit(habit)}
+            onUpdateMinutes={(mins) => updateHabit(habit.id, { dailyMinutesSpent: (habit.dailyMinutesSpent || 0) + mins })}
           />
         ))}
       </div>
 
+      {/* Edit Modal */}
       {editingHabit && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 w-full max-w-md shadow-pixel-card">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-pixel text-primary text-xs uppercase">Modify Training</h3>
-              <button onClick={() => setEditingHabit(null)} className="text-gray-500 hover:text-white">
+            <div className="flex justify-between items-center mb-8 border-b-2 border-white/5 pb-4">
+              <h3 className="font-pixel text-primary text-[10px] uppercase">Alter Training Regimen</h3>
+              <button onClick={() => setEditingHabit(null)} className="text-gray-500 hover:text-white transition-colors">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <form onSubmit={handleUpdateHabit} className="space-y-6">
               <div>
-                <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Regimen Title</label>
+                <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">New Title</label>
                 <input 
                   required
                   value={editingHabit.title}
                   onChange={e => setEditingHabit({...editingHabit, title: e.target.value})}
-                  className="w-full bg-black/40 border-2 border-rpg-slate p-3 text-white font-display outline-none"
+                  className="w-full bg-black/60 border-2 border-rpg-slate p-4 text-white font-display outline-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Target (Days)</label>
+                  <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Mastery (Days)</label>
                   <input 
                     required
                     type="number"
                     min="1"
                     value={editingHabit.targetDays}
                     onChange={e => setEditingHabit({...editingHabit, targetDays: parseInt(e.target.value)})}
-                    className="w-full bg-black/40 border-2 border-rpg-slate p-3 text-white font-display outline-none"
+                    className="w-full bg-black/60 border-2 border-rpg-slate p-4 text-white font-display outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Daily Goal (Min)</label>
+                  <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase">Focus Goal (Min)</label>
                   <input 
                     required
                     type="number"
                     min="0"
                     value={editingHabit.dailyTimeGoal || 0}
                     onChange={e => setEditingHabit({...editingHabit, dailyTimeGoal: parseInt(e.target.value)})}
-                    className="w-full bg-black/40 border-2 border-rpg-slate p-3 text-white font-display outline-none"
+                    className="w-full bg-black/60 border-2 border-rpg-slate p-4 text-white font-display outline-none"
                   />
                 </div>
               </div>
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setEditingHabit(null)} className="flex-1 py-3 bg-gray-700 text-white font-pixel text-[8px] border-b-4 border-black">CANCEL</button>
-                <button type="submit" className="flex-[2] py-3 bg-primary text-black font-pixel text-[8px] border-b-4 border-r-4 border-[#7a7a35]">SAVE CHANGES</button>
+              <div className="flex gap-4 pt-6">
+                <button type="button" onClick={() => setEditingHabit(null)} className="flex-1 py-4 bg-gray-700 text-white font-pixel text-[8px] border-b-4 border-black">CANCEL</button>
+                <button type="submit" className="flex-[2] py-4 bg-primary text-black font-pixel text-[8px] border-b-4 border-r-4 border-[#7a7a35]">SAVE CHANGES</button>
               </div>
             </form>
           </div>
@@ -156,7 +163,7 @@ const Habits: React.FC = () => {
   );
 };
 
-const HabitCard = ({ habit, onComplete, onDelete, onEdit }: any) => {
+const HabitCard = ({ habit, onComplete, onDelete, onEdit, onUpdateMinutes }: any) => {
   const target = habit.targetDays || 21;
   const timeGoal = habit.dailyTimeGoal || 0;
   const progress = Math.min(100, (habit.currentStreak / target) * 100);
@@ -168,7 +175,14 @@ const HabitCard = ({ habit, onComplete, onDelete, onEdit }: any) => {
   useEffect(() => {
     if (timerActive) {
       timerRef.current = window.setInterval(() => {
-        setSeconds(prev => prev + 1);
+        setSeconds(prev => {
+          const next = prev + 1;
+          // Every 60 seconds, update the persistent storage
+          if (next % 60 === 0) {
+            onUpdateMinutes(1);
+          }
+          return next;
+        });
       }, 1000);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -176,54 +190,71 @@ const HabitCard = ({ habit, onComplete, onDelete, onEdit }: any) => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive]);
 
+  const totalSecondsSpent = (habit.dailyMinutesSpent || 0) * 60 + seconds;
   const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
     const rs = s % 60;
-    return `${m}:${rs.toString().padStart(2, '0')}`;
+    if (h > 0) return `${h}h ${m}m ${rs}s`;
+    return `${m.toString().padStart(2, '0')}:${rs.toString().padStart(2, '0')}`;
   };
 
-  const timeProgress = timeGoal > 0 ? Math.min(100, (seconds / (timeGoal * 60)) * 100) : 0;
-  const goalMet = timeGoal > 0 && seconds >= timeGoal * 60;
+  const goalMet = timeGoal > 0 && totalSecondsSpent >= timeGoal * 60;
+  const timeProgress = timeGoal > 0 ? Math.min(100, (totalSecondsSpent / (timeGoal * 60)) * 100) : 0;
 
   return (
-    <div className={`bg-rpg-deep-slate border-4 ${habit.mastered ? 'border-primary shadow-[0_0_15px_rgba(242,204,13,0.2)]' : 'border-rpg-slate'} p-6 rounded relative overflow-hidden group shadow-pixel transition-all hover:bg-black/40 flex flex-col gap-4`}>
-      <div className="flex justify-between items-start">
-        <div className="min-w-0 flex-1 pr-4">
-           <h3 className={`font-pixel text-xs mb-1 truncate uppercase ${habit.mastered ? 'text-primary' : 'text-white'}`}>{habit.title}</h3>
-           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest truncate">
-             {habit.mastered ? 'Legendary Master' : `Streak: ${habit.currentStreak} / ${target} Days`}
-           </p>
+    <div className={`bg-rpg-deep-slate border-4 p-8 relative overflow-hidden group shadow-pixel transition-all hover:bg-black/20 flex flex-col gap-6 ${habit.mastered ? 'border-primary shadow-[0_0_20px_rgba(242,204,13,0.1)]' : 'border-rpg-slate'}`}>
+      {/* Background Icon */}
+      <span className="absolute -bottom-4 -left-4 material-symbols-outlined text-white/5 text-8xl pointer-events-none group-hover:scale-110 transition-transform">history_edu</span>
+      
+      <div className="flex justify-between items-start relative z-10">
+        <div className="min-w-0 flex-1">
+           <h3 className={`font-pixel text-xs mb-2 truncate uppercase tracking-tighter ${habit.mastered ? 'text-primary' : 'text-white'}`}>{habit.title}</h3>
+           <div className="flex items-center gap-3">
+              <span className="text-gray-500 text-[8px] font-pixel uppercase">Current Mastery: {habit.currentStreak} / {target} Days</span>
+              {habit.mastered && <span className="bg-primary text-black font-pixel text-[6px] px-1 animate-pulse">LEGENDARY</span>}
+           </div>
         </div>
-        <div className="flex gap-1 shrink-0">
+        <div className="flex gap-2">
           <button 
             onClick={onEdit}
-            className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-primary transition-all"
+            className="p-2 text-gray-600 hover:text-primary transition-all rounded-sm hover:bg-white/5"
             title="Edit Regimen"
           >
-            <span className="material-symbols-outlined text-sm">edit</span>
+            <span className="material-symbols-outlined text-lg">edit</span>
           </button>
           <button 
             onClick={onDelete}
-            className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-rpg-red transition-all"
+            className="p-2 text-gray-600 hover:text-rpg-red transition-all rounded-sm hover:bg-white/5"
             title="Delete Regimen"
           >
-            <span className="material-symbols-outlined text-sm">delete</span>
+            <span className="material-symbols-outlined text-lg">delete</span>
           </button>
         </div>
       </div>
 
+      {/* Timer Section */}
       {timeGoal > 0 && (
-        <div className="bg-black/40 p-3 rounded border border-white/5 space-y-3">
-           <div className="flex justify-between items-center">
-             <span className="text-[8px] font-pixel text-gray-500 uppercase">Daily Time Goal: {timeGoal}m</span>
-             <span className={`text-[10px] font-pixel tabular-nums ${goalMet ? 'text-rpg-green' : 'text-primary'}`}>
-               {formatTime(seconds)}
-             </span>
+        <div className={`p-4 rounded border-2 transition-all relative z-10 ${goalMet ? 'bg-rpg-green/5 border-rpg-green/40' : 'bg-black/40 border-white/5'}`}>
+           <div className="flex justify-between items-end mb-4">
+             <div>
+               <p className="text-[8px] font-pixel text-gray-500 uppercase mb-1">Concentration Progress</p>
+               <div className="flex items-center gap-2">
+                 <span className={`material-symbols-outlined text-sm ${timerActive ? 'animate-spin' : ''}`}>
+                    {goalMet ? 'verified' : 'hourglass_empty'}
+                 </span>
+                 <span className={`text-xl font-ui font-black tabular-nums ${goalMet ? 'text-rpg-green' : 'text-primary'}`}>
+                   {formatTime(totalSecondsSpent)}
+                 </span>
+                 <span className="text-gray-600 text-[10px] font-black uppercase">/ {timeGoal}m</span>
+               </div>
+             </div>
+             {goalMet && <span className="font-pixel text-[8px] text-rpg-green animate-bounce uppercase">Goal Met!</span>}
            </div>
            
-           <div className="h-2 w-full bg-black/60 rounded-none overflow-hidden relative border border-white/10">
+           <div className="h-2 w-full bg-black/60 rounded-none overflow-hidden border border-white/5 mb-4">
               <div 
-                className={`h-full transition-all duration-1000 ${goalMet ? 'bg-rpg-green' : 'bg-primary'}`} 
+                className={`h-full transition-all duration-1000 ${goalMet ? 'bg-rpg-green shadow-[0_0_10px_rgba(122,196,86,0.5)]' : 'bg-primary'}`} 
                 style={{ width: `${timeProgress}%` }}
               ></div>
            </div>
@@ -231,30 +262,32 @@ const HabitCard = ({ habit, onComplete, onDelete, onEdit }: any) => {
            <div className="flex gap-2">
               <button 
                 onClick={() => setTimerActive(!timerActive)}
-                className={`flex-1 py-2 text-[8px] font-pixel border-b-2 border-r-2 transition-all flex items-center justify-center gap-2
+                className={`flex-1 py-3 text-[8px] font-pixel border-b-4 border-r-4 transition-all flex items-center justify-center gap-2
                   ${timerActive ? 'bg-yellow-600 text-white border-yellow-800' : 'bg-rpg-slate text-white border-black'}`}
               >
-                <span className="material-symbols-outlined text-xs">{timerActive ? 'pause' : 'play_arrow'}</span>
-                {timerActive ? 'PAUSE' : 'START'}
+                <span className="material-symbols-outlined text-sm">{timerActive ? 'pause' : 'play_arrow'}</span>
+                {timerActive ? 'PAUSE' : 'START FOCUS'}
               </button>
               <button 
-                onClick={() => { setTimerActive(false); setSeconds(0); }}
-                className="px-3 bg-black/40 text-gray-500 hover:text-white border-b-2 border-black flex items-center justify-center"
+                onClick={() => { setTimerActive(false); setSeconds(0); onUpdateMinutes(-(habit.dailyMinutesSpent || 0)); }}
+                className="px-4 bg-black/40 text-gray-500 hover:text-white border-b-4 border-black transition-all flex items-center justify-center"
+                title="Reset daily progress"
               >
-                <span className="material-symbols-outlined text-xs">refresh</span>
+                <span className="material-symbols-outlined text-sm">refresh</span>
               </button>
            </div>
         </div>
       )}
 
-      <div className="space-y-2 mt-auto">
-        <div className="flex justify-between text-[8px] font-pixel text-gray-500 uppercase tracking-tighter">
-           <span>Mastery Progress</span>
-           <span className="tabular-nums">{Math.floor(progress)}%</span>
+      {/* Mastery Progress Bar */}
+      <div className="space-y-3 relative z-10">
+        <div className="flex justify-between items-center text-[8px] font-pixel text-gray-500 uppercase tracking-tighter">
+           <span>Mastery Arc</span>
+           <span className="tabular-nums">{Math.floor(progress)}% Complete</span>
         </div>
-        <div className="h-3 w-full bg-black/60 rounded-none border border-white/5 relative overflow-hidden shadow-inner">
+        <div className="h-4 w-full bg-black/60 border-2 border-white/5 relative overflow-hidden shadow-inner">
           <div 
-            className={`h-full transition-all duration-1000 ${habit.mastered ? 'bg-primary' : 'bg-blue-500'}`} 
+            className={`h-full transition-all duration-1000 ${habit.mastered ? 'bg-primary shadow-[0_0_15px_rgba(242,204,13,0.4)]' : 'bg-blue-600'}`} 
             style={{ width: `${progress}%` }}
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/20"></div>
@@ -264,17 +297,15 @@ const HabitCard = ({ habit, onComplete, onDelete, onEdit }: any) => {
 
       <button 
         onClick={onComplete}
-        className={`w-full py-4 font-pixel text-[10px] border-b-4 border-r-4 transition-all flex items-center justify-center gap-2
-          ${goalMet || timeGoal === 0 ? 'bg-rpg-green text-black border-[#4e8235] hover:brightness-110' : 'bg-gray-800 text-gray-400 border-black opacity-60'}`}
+        className={`w-full py-5 font-pixel text-[10px] border-b-8 border-r-8 transition-all flex items-center justify-center gap-3 relative z-10
+          ${goalMet || timeGoal === 0 ? 'bg-rpg-green text-black border-[#4e8235] hover:brightness-110 active:border-0 active:translate-y-2 active:translate-x-2' : 'bg-gray-800 text-gray-500 border-black opacity-40 cursor-not-allowed'}`}
       >
-        <span className="material-symbols-outlined text-sm">task_alt</span>
-        {goalMet ? 'GOAL MET - LOG TRAINING' : 'LOG TRAINING'}
+        <span className="material-symbols-outlined text-lg">workspace_premium</span>
+        {goalMet ? 'VICTORY - LOG TRAINING' : timeGoal > 0 ? 'COMPLETE GOAL TO LOG' : 'LOG TRAINING'}
       </button>
 
       {habit.mastered && (
-        <div className="absolute -top-4 -right-4 bg-primary text-black size-12 rotate-45 flex items-end justify-center pb-1">
-          <span className="material-symbols-outlined text-sm font-black -rotate-45">military_tech</span>
-        </div>
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none border-2 border-primary/20 animate-pulse"></div>
       )}
     </div>
   );
