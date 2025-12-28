@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserData, Task, Habit, Reward, Category, CharacterClass, Trophy, AttributeType } from '../types';
+import { UserData, Task, Habit, Reward, Category, CharacterClass, Trophy, AttributeType, Goal } from '../types';
 import { useGameLogic } from '../hooks/useGameLogic';
 import { storage } from '../lib/storage';
 import { startOfDay, differenceInDays, isYesterday, isToday } from 'date-fns';
@@ -17,11 +17,14 @@ interface GameContextType {
   deleteCategory: (id: string) => Promise<void>;
   tasks: Task[];
   habits: Habit[];
-  addQuest: (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, timeEstimate?: number) => Promise<void>;
+  addGoal: (title: string, description: string, targetValue: number, icon: string, color: string) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  claimGoalReward: (id: string) => Promise<void>;
+  addQuest: (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, goalId?: string, timeEstimate?: number) => Promise<void>;
   completeTask: (task: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskTime: (taskId: string, minutes: number) => Promise<void>;
-  addHabit: (title: string, targetDays?: number, dailyTimeGoal?: number) => Promise<void>;
+  addHabit: (title: string, category: string, goalId?: string, targetDays?: number, dailyTimeGoal?: number) => Promise<void>;
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<void>;
   completeHabit: (habit: Habit) => Promise<void>;
   deleteHabit: (habitId: string) => Promise<void>;
@@ -57,11 +60,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const savedUser = localStorage.getItem('abhyasa_active_user');
-    if (savedUser) {
-      loadData(savedUser);
-    } else {
-      setLoading(false);
-    }
+    if (savedUser) { loadData(savedUser); } else { setLoading(false); }
   }, []);
 
   const loadData = async (username: string) => {
@@ -76,18 +75,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const lastLoginDate = userData.lastLogin ? new Date(userData.lastLogin) : null;
       const today = startOfDay(new Date());
       
-      // Handle daily login and streak
       if (lastLoginDate) {
-        if (isYesterday(lastLoginDate)) {
-          dailyStreak += 1;
-        } else if (!isToday(lastLoginDate)) {
-          dailyStreak = 1;
-        }
+        if (isYesterday(lastLoginDate)) { dailyStreak += 1; } 
+        else if (!isToday(lastLoginDate)) { dailyStreak = 1; }
         
-        // Reset daily minutes spent if it's a new day
         if (!isToday(lastLoginDate)) {
           userHabits = userHabits.map((h: any) => ({ ...h, dailyMinutesSpent: 0 }));
-          // Note: In a real app we'd batch update the DB here
           for (const h of userHabits) {
             await storage.updateHabit(username, h.id, { dailyMinutesSpent: 0 });
           }
@@ -107,7 +100,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hp: updatedHP, 
         dailyStreak, 
         lastLogin: today.toISOString(),
-        stats: userData.stats || { str: 0, int: 0, foc: 0 }
+        stats: userData.stats || { str: 0, int: 0, foc: 0 },
+        goals: userData.goals || []
       };
       
       await storage.updateUser(username, updatedUserData);
@@ -116,23 +110,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setHabits(userHabits.map((h: any) => ({ 
         ...h, 
         targetDays: h.targetDays || 21, 
-        dailyMinutesSpent: h.dailyMinutesSpent || 0 
+        dailyTimeGoal: h.dailyTimeGoal || 0,
+        dailyMinutesSpent: h.dailyMinutesSpent || 0,
+        category: h.category || 'life'
       })));
     }
     setLoading(false);
   };
 
   const signup = async (u: string, p: string) => {
-    const existing = await storage.getUser(u);
-    if (existing) throw new Error("Hero name already taken!");
-    
     const newUser: UserData = {
       username: u, password: p, level: 1, xp: 0, gold: 100, hp: 100, dailyStreak: 1,
       lastLogin: new Date().toISOString(), inventory: [], characterClass: 'Paladin',
-      categories: DEFAULT_CATEGORIES, trophies: [],
+      categories: DEFAULT_CATEGORIES, trophies: [], goals: [],
       stats: { str: 0, int: 0, foc: 0 }
     };
-    
     await storage.setUser(u, newUser);
     localStorage.setItem('abhyasa_active_user', u);
     setUser(newUser);
@@ -155,7 +147,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetProgress = async () => {
     if (!user) return;
     const resetUser: UserData = {
-      ...user, level: 1, xp: 0, gold: 50, hp: 100, dailyStreak: 1, inventory: [], trophies: [],
+      ...user, level: 1, xp: 0, gold: 50, hp: 100, dailyStreak: 1, inventory: [], trophies: [], goals: [],
       stats: { str: 0, int: 0, foc: 0 }
     };
     await storage.setUser(user.username, resetUser);
@@ -164,9 +156,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserClass = async (c: CharacterClass) => {
     if (!user) return;
-    const updated = { ...user, characterClass: c };
     await storage.updateUser(user.username, { characterClass: c });
-    setUser(updated);
+    setUser({ ...user, characterClass: c });
   };
 
   const addCategory = async (cat: Omit<Category, 'id'>) => {
@@ -184,10 +175,55 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser({ ...user, categories: updatedCats });
   };
 
-  const addQuest = async (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, timeEstimate?: number) => {
+  const addGoal = async (title: string, description: string, targetValue: number, icon: string, color: string) => {
+    if (!user) return;
+    const newGoal: Goal = {
+      id: Math.random().toString(36).substr(2, 9),
+      title, description, targetValue, currentValue: 0,
+      icon, color, completed: false, rewardClaimed: false,
+      createdAt: new Date().toISOString()
+    };
+    const updatedGoals = [...user.goals, newGoal];
+    await storage.updateUser(user.username, { goals: updatedGoals });
+    setUser({ ...user, goals: updatedGoals });
+  };
+
+  const deleteGoal = async (id: string) => {
+    if (!user) return;
+    const updatedGoals = user.goals.filter(g => g.id !== id);
+    await storage.updateUser(user.username, { goals: updatedGoals });
+    setUser({ ...user, goals: updatedGoals });
+  };
+
+  const claimGoalReward = async (id: string) => {
+    if (!user) return;
+    const goal = user.goals.find(g => g.id === id);
+    if (!goal || !goal.completed || goal.rewardClaimed) return;
+
+    const goldReward = 500;
+    const xpReward = 1000;
+    
+    let newXP = user.xp + xpReward;
+    let newLevel = user.level;
+    while (newXP >= getRequiredXP(newLevel)) {
+      newXP -= getRequiredXP(newLevel);
+      newLevel++;
+    }
+
+    const updatedGoals = user.goals.map(g => g.id === id ? { ...g, rewardClaimed: true } : g);
+    await storage.updateUser(user.username, { 
+      goals: updatedGoals, 
+      gold: user.gold + goldReward, 
+      xp: newXP, 
+      level: newLevel 
+    });
+    setUser({ ...user, goals: updatedGoals, gold: user.gold + goldReward, xp: newXP, level: newLevel });
+  };
+
+  const addQuest = async (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, goalId?: string, timeEstimate?: number) => {
     if (!user) return;
     const newTask = await storage.addTask(user.username, { 
-      title, difficulty, category, completed: false, 
+      title, difficulty, category, goalId, completed: false, 
       timeEstimate: timeEstimate || 0, timeSpent: 0 
     });
     setTasks(prev => [...prev, newTask]);
@@ -196,25 +232,33 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeTask = async (task: Task) => {
     if (!user) return;
     const { xp, gold, statPoints } = calculateRewards(task.difficulty);
-    
     let newXP = user.xp + xp;
     let newLevel = user.level;
     const reqXP = getRequiredXP(newLevel);
-    if (newXP >= reqXP) {
-      newXP -= reqXP;
-      newLevel += 1;
-    }
+    if (newXP >= reqXP) { newXP -= reqXP; newLevel += 1; }
 
     const cat = user.categories.find(c => c.id === task.category);
     const alignment = (cat?.alignment || 'FOC').toLowerCase() as keyof UserData['stats'];
     const updatedStats = { ...user.stats, [alignment]: user.stats[alignment] + statPoints };
 
-    const updatedUser = { ...user, xp: newXP, level: newLevel, gold: user.gold + gold, stats: updatedStats };
-    await storage.updateUser(user.username, { xp: newXP, level: newLevel, gold: updatedUser.gold, stats: updatedStats });
-    await storage.updateTask(user.username, task.id, { completed: true });
+    // Update Goal if linked
+    let updatedGoals = [...user.goals];
+    if (task.goalId) {
+      updatedGoals = updatedGoals.map(g => {
+        if (g.id === task.goalId) {
+          const newVal = g.currentValue + 10;
+          return { ...g, currentValue: newVal, completed: newVal >= g.targetValue };
+        }
+        return g;
+      });
+    }
+
+    const completedAt = new Date().toISOString();
+    await storage.updateUser(user.username, { xp: newXP, level: newLevel, gold: user.gold + gold, stats: updatedStats, goals: updatedGoals });
+    await storage.updateTask(user.username, task.id, { completed: true, completedAt });
     
-    setUser(updatedUser);
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true } : t));
+    setUser({ ...user, xp: newXP, level: newLevel, gold: user.gold + gold, stats: updatedStats, goals: updatedGoals });
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true, completedAt } : t));
     checkTrophies();
   };
 
@@ -226,16 +270,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateTaskTime = async (taskId: string, minutes: number) => {
     if (!user) return;
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    const newTimeSpent = (task.timeSpent || 0) + minutes;
-    await storage.updateTask(user.username, taskId, { timeSpent: newTimeSpent });
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, timeSpent: newTimeSpent } : t));
+    await storage.updateTask(user.username, taskId, { timeSpent: (tasks.find(t => t.id === taskId)?.timeSpent || 0) + minutes });
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, timeSpent: (t.timeSpent || 0) + minutes } : t));
   };
 
-  const addHabit = async (title: string, targetDays: number = 21, dailyTimeGoal: number = 0) => {
+  const addHabit = async (title: string, category: string, goalId?: string, targetDays: number = 21, dailyTimeGoal: number = 0) => {
     if (!user) return;
-    const newHabit = await storage.addHabit(user.username, { title, currentStreak: 0, lastCompleted: null, mastered: false, targetDays, dailyTimeGoal, dailyMinutesSpent: 0 });
+    const newHabit = await storage.addHabit(user.username, { title, category, goalId, currentStreak: 0, lastCompleted: null, mastered: false, targetDays, dailyTimeGoal, dailyMinutesSpent: 0 });
     setHabits(prev => [...prev, newHabit]);
   };
 
@@ -261,20 +302,29 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let newXP = user.xp + xpReward;
     let newLevel = user.level;
     const reqXP = getRequiredXP(newLevel);
-    if (newXP >= reqXP) {
-      newXP -= reqXP;
-      newLevel += 1;
+    if (newXP >= reqXP) { newXP -= reqXP; newLevel += 1; }
+
+    const cat = user.categories.find(c => c.id === habit.category);
+    const alignment = (cat?.alignment || 'FOC').toLowerCase() as keyof UserData['stats'];
+    const updatedStats = { ...user.stats, [alignment]: user.stats[alignment] + statReward };
+
+    // Update Goal if linked
+    let updatedGoals = [...user.goals];
+    if (habit.goalId) {
+      updatedGoals = updatedGoals.map(g => {
+        if (g.id === habit.goalId) {
+          let progress = g.currentValue + 5;
+          if (mastered) progress += 50; // Large bonus for mastery
+          return { ...g, currentValue: progress, completed: progress >= g.targetValue };
+        }
+        return g;
+      });
     }
 
-    const updatedStats = { ...user.stats, foc: user.stats.foc + statReward };
-
-    const updatedUser = { ...user, xp: newXP, level: newLevel, gold: user.gold + goldReward, stats: updatedStats };
-    await storage.updateUser(user.username, { xp: newXP, level: newLevel, gold: updatedUser.gold, stats: updatedStats });
-    
-    // Also reset daily minutes spent when logging a completion
+    await storage.updateUser(user.username, { xp: newXP, level: newLevel, gold: user.gold + goldReward, stats: updatedStats, goals: updatedGoals });
     await storage.updateHabit(user.username, habit.id, { currentStreak: newStreak, mastered, lastCompleted, dailyMinutesSpent: 0 });
 
-    setUser(updatedUser);
+    setUser({ ...user, xp: newXP, level: newLevel, gold: user.gold + goldReward, stats: updatedStats, goals: updatedGoals });
     setHabits(prev => prev.map(h => h.id === habit.id ? { ...h, currentStreak: newStreak, mastered, lastCompleted, dailyMinutesSpent: 0 } : h));
     checkTrophies();
   };
@@ -289,18 +339,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user || user.gold < reward.cost) return false;
     const inventory = [...user.inventory];
     const existingIndex = inventory.findIndex(i => i.rewardId === reward.id);
-    if (existingIndex > -1) {
-      inventory[existingIndex].quantity += 1;
-    } else {
-      inventory.push({
-        id: Math.random().toString(36).substr(2, 9),
-        rewardId: reward.id, title: reward.title, description: reward.description, icon: reward.icon,
-        quantity: 1, type: reward.type, durability: reward.id === '1' ? 1 : undefined
-      });
+    if (existingIndex > -1) { inventory[existingIndex].quantity += 1; }
+    else {
+      inventory.push({ id: Math.random().toString(36).substr(2, 9), rewardId: reward.id, title: reward.title, description: reward.description, icon: reward.icon, quantity: 1, type: reward.type });
     }
-    const newGold = user.gold - reward.cost;
-    await storage.updateUser(user.username, { gold: newGold, inventory });
-    setUser({ ...user, gold: newGold, inventory });
+    await storage.updateUser(user.username, { gold: user.gold - reward.cost, inventory });
+    setUser({ ...user, gold: user.gold - reward.cost, inventory });
     return true;
   };
 
@@ -308,49 +352,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const item = user.inventory.find(i => i.id === itemId);
     if (!item) return;
-    
-    let updatedInventory = [...user.inventory];
-    let newHP = user.hp;
-    let newXP = user.xp;
-    let newLevel = user.level;
-    let newStats = { ...user.stats };
-
-    switch (item.rewardId) {
-      case '2': // Healing Salve
-        newHP = Math.min(100, user.hp + 20);
-        break;
-      case '3': // Tome of Insight
-        newXP += 250;
-        const reqXP = getRequiredXP(newLevel);
-        if (newXP >= reqXP) {
-          newXP -= reqXP;
-          newLevel += 1;
-        }
-        break;
-      case '4': // Stat Elixir
-        newStats.str += 10;
-        newStats.int += 10;
-        newStats.foc += 10;
-        break;
-    }
-
-    if (item.quantity > 1) {
-      updatedInventory = updatedInventory.map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i);
-    } else {
-      updatedInventory = updatedInventory.filter(i => i.id !== itemId);
-    }
-
-    const updatedUser = { 
-      ...user, 
-      inventory: updatedInventory, 
-      hp: newHP, 
-      xp: newXP, 
-      level: newLevel,
-      stats: newStats
-    };
-    
-    await storage.updateUser(user.username, updatedUser);
-    setUser(updatedUser);
+    let updatedInventory = user.inventory.map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i).filter(i => i.quantity > 0);
+    let { hp: newHP, xp: newXP, level: newLevel, stats: newStats } = user;
+    if (item.rewardId === '2') newHP = Math.min(100, newHP + 20);
+    if (item.rewardId === '3') { newXP += 250; while (newXP >= getRequiredXP(newLevel)) { newXP -= getRequiredXP(newLevel); newLevel++; } }
+    if (item.rewardId === '4') { newStats = { str: newStats.str + 10, int: newStats.int + 10, foc: newStats.foc + 10 }; }
+    await storage.updateUser(user.username, { inventory: updatedInventory, hp: newHP, xp: newXP, level: newLevel, stats: newStats });
+    setUser({ ...user, inventory: updatedInventory, hp: newHP, xp: newXP, level: newLevel, stats: newStats });
   };
 
   const updateHP = async (amount: number) => {
@@ -366,17 +374,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let changed = false;
     TROPHIES.forEach(t => {
       if (unlocked.includes(t.id)) return;
-      let conditionMet = false;
-      if (t.condition === 'level' && user.level >= t.threshold) conditionMet = true;
-      if (t.condition === 'quests' && tasks.filter(tk => tk.completed).length >= t.threshold) conditionMet = true;
-      if (t.condition === 'gold' && user.gold >= t.threshold) conditionMet = true;
-      if (t.condition === 'habits' && habits.filter(h => h.mastered).length >= t.threshold) conditionMet = true;
-      if (conditionMet) { unlocked.push(t.id); changed = true; }
+      let met = false;
+      if (t.condition === 'level' && user.level >= t.threshold) met = true;
+      if (t.condition === 'quests' && tasks.filter(tk => tk.completed).length >= t.threshold) met = true;
+      if (t.condition === 'gold' && user.gold >= t.threshold) met = true;
+      if (t.condition === 'habits' && habits.filter(h => h.mastered).length >= t.threshold) met = true;
+      if (met) { unlocked.push(t.id); changed = true; }
     });
-    if (changed) {
-      storage.updateUser(user.username, { trophies: unlocked });
-      setUser({ ...user, trophies: unlocked });
-    }
+    if (changed) { storage.updateUser(user.username, { trophies: unlocked }); setUser({ ...user, trophies: unlocked }); }
   };
 
   return (
@@ -384,7 +389,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, loading, signup, login, logout, resetProgress, updateUserClass, 
       addCategory, deleteCategory, tasks, habits, addQuest, completeTask, 
       deleteTask, updateTaskTime, addHabit, updateHabit, completeHabit, deleteHabit, 
-      buyReward, useItem, updateHP, checkTrophies 
+      buyReward, useItem, updateHP, checkTrophies, addGoal, deleteGoal, claimGoalReward
     }}>
       {children}
     </GameContext.Provider>
@@ -393,6 +398,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useGame = () => {
   const context = useContext(GameContext);
-  if (context === undefined) throw new Error('useGame must be used within a GameProvider');
+  if (!context) throw new Error('useGame must be used within a GameProvider');
   return context;
 };

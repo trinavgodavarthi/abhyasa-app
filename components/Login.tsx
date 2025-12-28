@@ -15,71 +15,86 @@ const Login: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      if (isSignup) {
-        await signup(username, password);
-      } else {
-        await login(username, password);
-      }
+      if (isSignup) { await signup(username, password); }
+      else { await login(username, password); }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'The gateway is sealed.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#111722]">
-      <div className="w-full max-w-md bg-rpg-deep-slate border-4 border-rpg-slate shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] p-8">
-        <div className="text-center mb-8">
-          <div className="size-16 bg-primary mx-auto rounded mb-4 flex items-center justify-center border-2 border-white/20 shadow-pixel">
-            <span className="material-symbols-outlined text-black font-black text-4xl">swords</span>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background-dark relative overflow-hidden">
+      {/* Cinematic Background Elements */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-30"></div>
+      <div className="absolute -top-20 -left-20 size-80 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute -bottom-20 -right-20 size-80 bg-rpg-red/5 rounded-full blur-3xl animate-pulse delay-700"></div>
+
+      <div className="w-full max-w-md bg-rpg-deep-slate border-4 border-rpg-slate shadow-pixel-card p-10 relative z-10 transition-all">
+        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary"></div>
+        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary"></div>
+        
+        <div className="text-center mb-10">
+          <div className="size-20 bg-black/60 mx-auto rounded-none mb-6 flex items-center justify-center border-4 border-primary shadow-[0_0_30px_rgba(242,204,13,0.1)] group">
+            <span className="material-symbols-outlined text-primary font-black text-5xl group-hover:scale-110 transition-transform">swords</span>
           </div>
-          <h1 className="font-pixel text-primary text-xl tracking-tighter mb-2">ABHYASA</h1>
-          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">The Path to Self-Mastery</p>
+          <h1 className="font-pixel text-primary text-2xl tracking-tighter mb-3 uppercase drop-shadow-md italic">ABHYASA</h1>
+          <p className="text-gray-500 text-[9px] font-pixel uppercase tracking-[0.3em] opacity-80 leading-relaxed">The Path to Self-Mastery</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-[10px] font-pixel text-gray-400 mb-2 uppercase">Username</label>
-            <input 
-              required
-              type="text" 
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full bg-black/40 border-2 border-rpg-slate text-white p-3 font-display focus:border-primary outline-none transition-colors" 
-              placeholder="ENTER NAME..."
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-pixel text-gray-400 mb-2 uppercase">Password</label>
-            <input 
-              required
-              type="password" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full bg-black/40 border-2 border-rpg-slate text-white p-3 font-display focus:border-primary outline-none transition-colors" 
-              placeholder="SECRET CODE..."
-            />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[8px] font-pixel text-gray-500 mb-2 uppercase tracking-widest">Identify Yourself</label>
+              <input 
+                required
+                type="text" 
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full bg-black/60 border-2 border-rpg-slate text-white p-4 font-bold focus:border-primary outline-none transition-all placeholder:text-gray-700" 
+                placeholder="HERO NAME..."
+              />
+            </div>
+            <div>
+              <label className="block text-[8px] font-pixel text-gray-400 mb-2 uppercase tracking-widest">Access Key</label>
+              <input 
+                required
+                type="password" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-black/60 border-2 border-rpg-slate text-white p-4 font-bold focus:border-primary outline-none transition-all placeholder:text-gray-700" 
+                placeholder="SECRET CODE..."
+              />
+            </div>
           </div>
 
-          {error && <p className="text-rpg-red text-center text-[10px] font-bold uppercase animate-pulse">{error}</p>}
+          {error && (
+            <div className="p-3 bg-rpg-red/10 border-2 border-rpg-red/30 text-rpg-red text-center text-[9px] font-pixel uppercase animate-bounce leading-relaxed">
+              {error}
+            </div>
+          )}
 
           <button 
             disabled={loading}
-            className="w-full bg-primary hover:bg-[#d4d468] text-black font-pixel text-xs py-4 border-b-4 border-r-4 border-[#7a7a35] active:border-0 active:translate-y-1 transition-all disabled:opacity-50"
+            className="w-full bg-primary hover:bg-yellow-400 text-black font-pixel text-[10px] py-5 border-b-8 border-r-8 border-[#7a7a35] active:border-0 active:translate-y-2 active:translate-x-2 transition-all disabled:opacity-50 uppercase tracking-tighter"
           >
-            {loading ? 'WAITING...' : isSignup ? 'SIGN UP' : 'START ADVENTURE'}
+            {loading ? 'OPENING GATES...' : isSignup ? 'SIGN DECREE' : 'COMMENCE LEGEND'}
           </button>
         </form>
 
-        <div className="mt-8 text-center">
+        <div className="mt-10 text-center border-t-2 border-white/5 pt-6">
           <button 
-            onClick={() => setIsSignup(!isSignup)} 
-            className="text-[10px] font-pixel text-gray-500 hover:text-white transition-colors"
+            onClick={() => { setError(''); setIsSignup(!isSignup); }} 
+            className="text-[9px] font-pixel text-gray-500 hover:text-white transition-all uppercase tracking-widest underline underline-offset-8 decoration-primary/20 hover:decoration-primary"
           >
-            {isSignup ? "ALREADY HAVE AN ACCOUNT? LOGIN" : "NEW EXPLORER? SIGN UP"}
+            {isSignup ? "RETURN TO ENTRY" : "NEW SOUL? SIGN UP"}
           </button>
         </div>
+      </div>
+      
+      <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none opacity-20">
+        <p className="text-[7px] font-pixel uppercase tracking-[1em] text-white">Built for consistency • Born for glory</p>
       </div>
     </div>
   );

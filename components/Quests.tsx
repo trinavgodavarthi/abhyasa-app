@@ -13,6 +13,7 @@ const Quests: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newDiff, setNewDiff] = useState<'easy' | 'medium' | 'hard'>('easy');
   const [newCatId, setNewCatId] = useState<string>('');
+  const [newGoalId, setNewGoalId] = useState<string>('');
   const [newTimeEstimate, setNewTimeEstimate] = useState<number>(30);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortField>('createdAt');
@@ -29,8 +30,9 @@ const Quests: React.FC = () => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     const cat = newCatId || (user?.categories?.[0]?.id || 'slaying');
-    await addQuest(newTitle, newDiff, cat, newTimeEstimate);
+    await addQuest(newTitle, newDiff, cat, newGoalId || undefined, newTimeEstimate);
     setNewTitle('');
+    setNewGoalId('');
     setShowAdd(false);
   };
 
@@ -95,86 +97,111 @@ const Quests: React.FC = () => {
   const completedQuests = sortedAndFilteredTasks.filter(t => t.completed);
 
   return (
-    <div className="bg-rpg-paper border-4 border-rpg-slate shadow-xl p-8 rounded-sm relative min-h-[600px] animate-in slide-in-from-bottom-4 duration-500">
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
+    <div className="bg-rpg-paper border-4 border-[#3d2b1f] shadow-pixel-card p-10 relative min-h-[600px] animate-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+      <div className="absolute inset-0 opacity-15 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
+      
       <div className="relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b-4 border-rpg-slate/20 pb-4 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b-4 border-[#3d2b1f]/20 pb-6 gap-4">
            <div>
-             <h2 className="text-4xl font-black text-[#3d2b1f] tracking-tighter flex items-center gap-3">
-               <span className="material-symbols-outlined text-4xl">feed</span> QUEST LOG
+             <h2 className="text-4xl font-black text-[#3d2b1f] tracking-tighter flex items-center gap-4">
+               <span className="material-symbols-outlined text-5xl">auto_stories</span> QUEST LEDGER
              </h2>
-             <p className="text-[#5c4033] font-bold text-sm uppercase">Active Missions: {activeQuests.length}</p>
+             <p className="text-[#3d2b1f] font-pixel text-[8px] uppercase tracking-widest mt-2 opacity-60">Mercenary Work & Divine Decrees</p>
            </div>
-           <button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-[#d4d468] text-black border-b-4 border-r-4 border-[#7a7a35] active:border-0 active:translate-y-1 px-6 py-3 rounded font-black tracking-wider flex items-center gap-2">
-             <span className="material-symbols-outlined">add_circle</span> NEW QUEST
+           <button onClick={() => setShowAdd(true)} className="bg-primary text-black border-b-8 border-r-8 border-[#7a7a35] hover:brightness-110 active:border-0 active:translate-y-2 active:translate-x-2 px-10 py-5 font-pixel text-[10px] transition-all tracking-tighter">
+             ISSUE COMMAND
            </button>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-10 flex flex-wrap gap-3">
            <FilterBtn active={selectedCategories.length === 0} onClick={() => toggleFilter('all')} label="All" icon="apps" />
            {user?.categories.map(cat => <FilterBtn key={cat.id} active={selectedCategories.includes(cat.id)} onClick={() => toggleFilter(cat.id)} label={cat.label} icon={cat.icon} />)}
         </div>
 
-        <div className="space-y-4">
-          {activeQuests.map(task => <QuestItem key={task.id} task={task} categories={user?.categories || []} onComplete={() => completeTask(task)} onDelete={() => deleteTask(task.id)} />)}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {activeQuests.length > 0 ? (
+            activeQuests.map(task => <QuestItem key={task.id} task={task} categories={user?.categories || []} goals={user?.goals || []} onComplete={() => completeTask(task)} onDelete={() => deleteTask(task.id)} />)
+          ) : (
+            <div className="col-span-full py-20 bg-black/5 border-4 border-dashed border-[#3d2b1f]/20 text-center rounded">
+               <span className="material-symbols-outlined text-6xl text-[#3d2b1f]/20 mb-4">edit_document</span>
+               <p className="font-pixel text-[8px] text-[#3d2b1f]/40 uppercase tracking-widest">The Bounty Board is Bare</p>
+            </div>
+          )}
         </div>
 
         {completedQuests.length > 0 && (
-          <div className="mt-12 pt-8 border-t-4 border-black/5">
-            <h3 className="font-pixel text-[10px] text-gray-500 uppercase mb-4">Completed Archive</h3>
-            <div className="space-y-2 opacity-50">
-              {completedQuests.map(task => <div key={task.id} className="text-sm text-[#3d2b1f] flex justify-between"><span>{task.title}</span><span className="text-xs uppercase font-bold">{task.timeSpent || 0}m logged</span></div>)}
+          <div className="mt-16 pt-10 border-t-4 border-[#3d2b1f]/10">
+            <h3 className="font-pixel text-[10px] text-[#3d2b1f]/40 uppercase mb-6 tracking-widest flex items-center gap-3">
+              <span className="h-[1px] flex-1 bg-[#3d2b1f]/10"></span>
+              Archived Victories
+              <span className="h-[1px] flex-1 bg-[#3d2b1f]/10"></span>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-60">
+              {completedQuests.map(task => (
+                <div key={task.id} className="text-[10px] font-bold text-[#3d2b1f] flex justify-between bg-black/5 p-3 border-2 border-[#3d2b1f]/10 uppercase tracking-tighter">
+                  <span className="truncate max-w-[70%]">{task.title}</span>
+                  <span className="tabular-nums whitespace-nowrap">{task.timeSpent || 0}m LOGGED</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-rpg-deep-slate p-8 border-4 border-rpg-slate shadow-2xl max-w-xl w-full">
-            <h1 className="font-pixel text-primary text-center mb-8 uppercase">Issue New Command</h1>
-            <form onSubmit={handleAddTask} className="space-y-6">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-rpg-deep-slate p-10 border-4 border-rpg-slate shadow-pixel-card max-w-xl w-full relative">
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary"></div>
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary"></div>
+            
+            <h1 className="font-pixel text-primary text-center mb-10 uppercase tracking-tighter text-sm">Draft Imperial Decree</h1>
+            <form onSubmit={handleAddTask} className="space-y-8">
               <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-rpg-sand text-[10px] font-pixel uppercase">Objective</label>
-                  <button type="button" onClick={handleAISuggest} className="text-primary text-[8px] font-pixel flex items-center gap-1 hover:brightness-125">
-                    <span className={`material-symbols-outlined text-xs ${isAiLoading ? 'animate-spin' : ''}`}>auto_awesome</span>
+                <div className="flex justify-between mb-3">
+                  <label className="text-gray-500 text-[8px] font-pixel uppercase tracking-widest">Objective Designation</label>
+                  <button type="button" onClick={handleAISuggest} className="text-primary text-[8px] font-pixel flex items-center gap-2 hover:brightness-125 transition-all">
+                    <span className={`material-symbols-outlined text-sm ${isAiLoading ? 'animate-spin' : 'animate-pulse'}`}>auto_awesome</span>
                     {isAiLoading ? 'SENSING...' : 'AI BRAINSTORM'}
                   </button>
                 </div>
-                <input required value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/40 text-white p-4 border-2 border-rpg-slate outline-none focus:border-primary" />
+                <input required value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/60 text-white p-5 border-2 border-rpg-slate outline-none focus:border-primary font-bold text-lg" placeholder="Enter objective..." />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-rpg-sand text-[10px] font-pixel block mb-2 uppercase">Time (Min)</label>
-                  <div className="flex gap-2">
-                    <input type="number" value={newTimeEstimate} onChange={e => setNewTimeEstimate(parseInt(e.target.value))} className="w-full bg-black/40 text-white p-3 border-2 border-rpg-slate" />
-                    <button type="button" onClick={() => setNewTimeEstimate(prev => prev + 15)} className="px-3 bg-rpg-slate text-[10px] font-pixel">+15</button>
-                  </div>
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Investment (Min)</label>
+                  <input type="number" value={newTimeEstimate} onChange={e => setNewTimeEstimate(parseInt(e.target.value))} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none" />
                 </div>
                 <div>
-                   <label className="text-rpg-sand text-[10px] font-pixel block mb-2 uppercase">Category</label>
-                   <select value={newCatId} onChange={e => setNewCatId(e.target.value)} className="w-full bg-black/40 text-white p-3 border-2 border-rpg-slate">
-                     {user?.categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                   <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Sector Alignment</label>
+                   <select value={newCatId} onChange={e => setNewCatId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]">
+                     {user?.categories.map(c => <option key={c.id} value={c.id}>{c.label.toUpperCase()}</option>)}
                    </select>
                 </div>
               </div>
 
               <div>
-                <label className="text-rpg-sand text-[10px] font-pixel block mb-2 uppercase">Difficulty</label>
-                <div className="grid grid-cols-3 gap-2">
+                <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Link to Great Work (Optional)</label>
+                <select value={newGoalId} onChange={e => setNewGoalId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]">
+                  <option value="">-- NO GREAT WORK LINKED --</option>
+                  {user?.goals.map(g => <option key={g.id} value={g.id}>{g.title.toUpperCase()}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Tactical Complexity</label>
+                <div className="grid grid-cols-3 gap-3">
                   {['easy','medium','hard'].map(d => (
-                    <button key={d} type="button" onClick={() => setNewDiff(d as any)} className={`p-2 border-2 text-[8px] font-pixel transition-all ${newDiff === d ? 'bg-primary text-black border-white' : 'border-rpg-slate text-gray-500 hover:text-gray-300'}`}>
-                      {d.toUpperCase()}
+                    <button key={d} type="button" onClick={() => setNewDiff(d as any)} className={`py-4 border-2 font-pixel text-[8px] transition-all uppercase ${newDiff === d ? 'bg-primary text-black border-white shadow-lg' : 'border-rpg-slate text-gray-500 hover:text-white'}`}>
+                      {d}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 p-3 bg-gray-700 font-pixel text-[10px] border-b-4 border-black">CANCEL</button>
-                <button type="submit" className="flex-[2] p-3 bg-rpg-green text-black font-pixel text-[10px] border-b-4 border-[#4e8235]">ACCEPT MISSION</button>
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-5 bg-gray-700 text-white font-pixel text-[9px] border-b-4 border-black uppercase tracking-tighter">Retreat</button>
+                <button type="submit" className="flex-[2] py-5 bg-primary text-black font-pixel text-[9px] border-b-4 border-r-4 border-[#7a7a35] uppercase tracking-tighter">Commence Quest</button>
               </div>
             </form>
           </div>
@@ -185,46 +212,60 @@ const Quests: React.FC = () => {
 };
 
 const FilterBtn = ({ active, onClick, label, icon }: any) => (
-  <button onClick={onClick} className={`flex items-center gap-2 px-3 py-1.5 border-2 font-pixel text-[8px] uppercase tracking-tighter transition-all ${active ? 'bg-[#3d2b1f] border-[#3d2b1f] text-primary' : 'bg-transparent border-[#3d2b1f]/20 text-[#3d2b1f]/60 hover:border-[#3d2b1f]/40'}`}>
-    <span className="material-symbols-outlined text-sm">{icon}</span> {label}
+  <button onClick={onClick} className={`flex items-center gap-3 px-5 py-2.5 border-4 font-bold text-[10px] uppercase tracking-tight transition-all rounded-sm ${active ? 'bg-[#3d2b1f] border-[#3d2b1f] text-primary shadow-md' : 'bg-transparent border-[#3d2b1f]/10 text-[#3d2b1f]/40 hover:border-[#3d2b1f]/40'}`}>
+    <span className="material-symbols-outlined text-lg">{icon}</span> {label}
   </button>
 );
 
-const QuestItem = ({ task, categories, onComplete, onDelete }: any) => {
+const QuestItem = ({ task, categories, goals, onComplete, onDelete }: any) => {
   const cat = categories.find((c: any) => c.id === task.category);
+  const goal = goals.find((g: any) => g.id === task.goalId);
   const timeProgress = task.timeEstimate ? Math.min(100, ((task.timeSpent || 0) / task.timeEstimate) * 100) : 0;
   const alignment = cat?.alignment || 'FOC';
 
   return (
-    <div className="bg-[#E8D0AA] border-4 border-[#A37853] p-4 rounded shadow-md group transition-all hover:translate-x-1 hover:shadow-lg">
-      <div className="flex items-center gap-4">
-        <div className="shrink-0 size-12 bg-black/10 flex items-center justify-center rounded border-2 border-black/20 relative">
-          <span className="material-symbols-outlined text-2xl text-[#3d2b1f]">{cat?.icon || 'help'}</span>
-          <div className="absolute -top-1 -right-1 bg-[#3d2b1f] text-primary text-[6px] px-1 rounded font-pixel shadow-sm">
+    <div className="bg-[#E8D0AA] border-4 border-[#3d2b1f] p-6 rounded-none shadow-pixel-card group transition-all hover:translate-x-1 hover:shadow-2xl flex flex-col gap-5">
+      <div className="flex items-center gap-5">
+        <div className="shrink-0 size-14 bg-[#3d2b1f] flex items-center justify-center rounded-none border-2 border-black/20 relative shadow-inner">
+          <span className="material-symbols-outlined text-3xl text-primary">{cat?.icon || 'help'}</span>
+          <div className="absolute -top-2 -right-2 bg-[#3d2b1f] text-primary text-[6px] px-1.5 py-0.5 border border-black font-pixel shadow-sm">
             {alignment}
           </div>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-[#3d2b1f] font-black text-lg truncate">{task.title}</h3>
-            <span className={`text-[8px] font-pixel px-1 border rounded ${task.difficulty === 'hard' ? 'text-rpg-red border-rpg-red' : task.difficulty === 'medium' ? 'text-blue-600 border-blue-600' : 'text-rpg-green border-rpg-green'}`}>
-              {task.difficulty}
+          <div className="flex items-center gap-3 mb-1">
+            <h3 className="text-[#3d2b1f] font-black text-xl truncate uppercase tracking-tighter italic">{task.title}</h3>
+            <span className={`text-[6px] font-pixel px-1.5 py-0.5 border-2 rounded-sm bg-white/40 shadow-sm ${task.difficulty === 'hard' ? 'text-rpg-red border-rpg-red' : task.difficulty === 'medium' ? 'text-blue-600 border-blue-600' : 'text-rpg-green border-rpg-green'}`}>
+              {task.difficulty.toUpperCase()}
             </span>
           </div>
-          <div className="flex items-center gap-4">
-             <div className="flex-1 h-3 bg-black/10 rounded-sm overflow-hidden relative border border-[#3d2b1f]/20 shadow-inner">
-               <div className={`h-full transition-all duration-500 ${timeProgress >= 100 ? 'bg-primary' : 'bg-rpg-green'}`} style={{ width: `${timeProgress}%` }}></div>
-               {timeProgress >= 100 && <div className="absolute inset-0 bg-white/20 animate-pulse"></div>}
-             </div>
-             <span className="text-[10px] font-bold text-[#3d2b1f]/60 uppercase whitespace-nowrap tabular-nums">
-               {task.timeSpent || 0} / {task.timeEstimate || 0}m
-             </span>
-          </div>
+          <p className="text-[#3d2b1f]/40 text-[9px] font-black uppercase tracking-widest">{cat?.label || 'UNKNOWN'} EXPEDITION</p>
+          {goal && (
+            <p className="text-primary bg-[#3d2b1f] text-[7px] font-pixel px-1 mt-2 inline-block uppercase animate-pulse">
+              Contributes to: {goal.title}
+            </p>
+          )}
         </div>
-        <div className="flex gap-2">
-          <button onClick={onDelete} className="size-10 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:text-rpg-red transition-opacity"><span className="material-symbols-outlined">delete</span></button>
-          <button onClick={onComplete} className="size-10 bg-[#cfb58e] border-4 border-[#8c6b4a] hover:bg-rpg-green hover:text-white transition-all flex items-center justify-center shadow-pixel"><span className="material-symbols-outlined">check</span></button>
-        </div>
+      </div>
+
+      <div className="space-y-2">
+         <div className="flex justify-between items-end text-[9px] font-pixel text-[#3d2b1f]/60 uppercase tracking-tighter">
+            <span>Mana Expenditure</span>
+            <span className="tabular-nums font-black">{task.timeSpent || 0} / {task.timeEstimate || 0}m</span>
+         </div>
+         <div className="h-4 w-full bg-[#3d2b1f]/10 rounded-none overflow-hidden relative border-2 border-[#3d2b1f]/20 p-[2px]">
+           <div className={`h-full transition-all duration-700 ${timeProgress >= 100 ? 'bg-primary' : 'bg-rpg-green'}`} style={{ width: `${timeProgress}%` }}>
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/20"></div>
+           </div>
+         </div>
+      </div>
+
+      <div className="flex gap-4 pt-2 mt-auto">
+        <button onClick={onDelete} className="flex-1 py-3 bg-black/5 text-rpg-red font-pixel text-[8px] border-2 border-rpg-red/20 hover:bg-rpg-red/10 hover:border-rpg-red/40 transition-all uppercase">Discard</button>
+        <button onClick={onComplete} className="flex-[2] bg-[#3d2b1f] text-primary font-pixel text-[8px] border-b-4 border-r-4 border-black hover:brightness-125 transition-all flex items-center justify-center gap-3 uppercase shadow-pixel">
+          <span className="material-symbols-outlined text-lg">check_circle</span>
+          Complete
+        </button>
       </div>
     </div>
   );

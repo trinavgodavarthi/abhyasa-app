@@ -10,11 +10,13 @@ import Inventory from './components/Inventory';
 import Settings from './components/Settings';
 import Trophies from './components/Trophies';
 import SageGuide from './components/SageGuide';
+import Goals from './components/Goals';
+import Chronicler from './components/Chronicler';
 import { useGameLogic } from './hooks/useGameLogic';
 
 const MainAppContent = () => {
   const { user, loading } = useGame();
-  const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop' | 'inventory' | 'settings' | 'trophies' | 'guide'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop' | 'inventory' | 'settings' | 'trophies' | 'guide' | 'goals' | 'chronicler'>('hero');
   const [showCRT, setShowCRT] = useState(true);
   const { getRequiredXP } = useGameLogic();
 
@@ -127,16 +129,19 @@ const MainAppContent = () => {
           {activeTab === 'settings' && <Settings showCRT={showCRT} onToggleCRT={() => setShowCRT(!showCRT)} />}
           {activeTab === 'trophies' && <Trophies />}
           {activeTab === 'guide' && <SageGuide />}
+          {activeTab === 'goals' && <Goals />}
+          {activeTab === 'chronicler' && <Chronicler />}
         </div>
       </main>
 
       {/* Navigation Footer - Solid RPG Panel */}
       <nav className="bg-rpg-deep-slate border-t-4 border-black p-3 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div className="max-w-xl mx-auto flex justify-around">
+        <div className="max-w-4xl mx-auto flex justify-around sm:gap-4 overflow-x-auto no-scrollbar">
           <NavBtn active={activeTab === 'hero'} onClick={() => setActiveTab('hero')} icon="shield_person" label="Hero" />
+          <NavBtn active={activeTab === 'chronicler'} onClick={() => setActiveTab('chronicler')} icon="history_edu" label="Stats" />
+          <NavBtn active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon="architecture" label="Legacy" />
+          <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="fitness_center" label="Habits" />
           <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
-          <NavBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon="backpack" label="Items" />
-          <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="history_edu" label="Habits" />
           <NavBtn active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon="storefront" label="Shop" />
         </div>
       </nav>
@@ -147,11 +152,11 @@ const MainAppContent = () => {
 const NavBtn = ({ active, onClick, icon, label }: any) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1.5 p-2 px-4 transition-all duration-300 rounded-lg group
-      ${active ? 'text-primary scale-110 bg-black/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+    className={`flex flex-col items-center gap-1.5 p-2 px-3 sm:px-6 transition-all duration-300 rounded-lg group min-w-[60px]
+      ${active ? 'text-primary scale-105 sm:scale-110 bg-black/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
   >
-    <span className={`material-symbols-outlined text-2xl transition-transform ${active ? 'fill-1' : 'group-hover:scale-110'}`}>{icon}</span>
-    <span className={`text-[8px] font-pixel uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
+    <span className={`material-symbols-outlined text-xl sm:text-2xl transition-transform ${active ? 'fill-1' : 'group-hover:scale-110'}`}>{icon}</span>
+    <span className={`text-[7px] sm:text-[8px] font-pixel uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
   </button>
 );
 

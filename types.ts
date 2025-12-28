@@ -10,6 +10,19 @@ export interface Category {
   alignment: AttributeType;
 }
 
+export interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  targetValue: number;
+  currentValue: number;
+  icon: string;
+  color: string;
+  completed: boolean;
+  rewardClaimed: boolean;
+  createdAt: string;
+}
+
 export interface Trophy {
   id: string;
   title: string;
@@ -27,11 +40,12 @@ export interface UserData {
   xp: number;
   gold: number;
   hp: number;
-  dailyStreak: number; // App-wide login streak
+  dailyStreak: number;
   lastLogin: any;
   inventory: InventoryItem[];
   characterClass?: CharacterClass;
   categories: Category[];
+  goals: Goal[];
   trophies: string[]; 
   stats: {
     str: number;
@@ -57,8 +71,10 @@ export interface Task {
   title: string;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string; 
+  goalId?: string; // Linked goal
   completed: boolean;
   createdAt: any;
+  completedAt?: string; // New field for history
   timeEstimate?: number; 
   timeSpent?: number; 
 }
@@ -66,12 +82,14 @@ export interface Task {
 export interface Habit {
   id: string;
   title: string;
+  category: string; 
+  goalId?: string; // Linked goal
   currentStreak: number;
   lastCompleted: any;
   mastered: boolean; 
   targetDays: number;
   dailyTimeGoal?: number;
-  dailyMinutesSpent: number; // New field for persistence
+  dailyMinutesSpent: number;
 }
 
 export interface Reward {
