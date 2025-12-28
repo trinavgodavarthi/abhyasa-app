@@ -8,11 +8,13 @@ import Habits from './components/Habits';
 import Shop from './components/Shop';
 import Inventory from './components/Inventory';
 import Settings from './components/Settings';
+import Trophies from './components/Trophies';
+import SageGuide from './components/SageGuide';
 import { useGameLogic } from './hooks/useGameLogic';
 
 const MainAppContent = () => {
   const { user, loading, logout } = useGame();
-  const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop' | 'inventory' | 'settings'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'quests' | 'habits' | 'shop' | 'inventory' | 'settings' | 'trophies' | 'guide'>('hero');
   const [showCRT, setShowCRT] = useState(true);
   const { getRequiredXP } = useGameLogic();
 
@@ -42,12 +44,11 @@ const MainAppContent = () => {
       {/* Top HUD */}
       <header className="bg-black/60 border-b-4 border-rpg-deep-slate p-4 z-40">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActiveTab('hero')}>
              <div className="size-12 rounded bg-rpg-slate border-2 border-white/20 pixelated overflow-hidden" 
                   style={{ backgroundImage: `url('https://picsum.photos/seed/${user.username}/100')`, backgroundSize: 'cover' }}>
              </div>
              <div>
-               <h1 className="font-pixel text-xs tracking-wider uppercase text-white">{user.username}</h1>
                <p className="text-[10px] font-bold text-gray-400 uppercase">Lvl {user.level} {user.characterClass || 'Paladin'}</p>
              </div>
           </div>
@@ -87,13 +88,20 @@ const MainAppContent = () => {
 
       {/* Main Container */}
       <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]">
-        <div className="max-w-6xl mx-auto">
-          {activeTab === 'hero' && <Hero onInventoryOpen={() => setActiveTab('inventory')} onConfigOpen={() => setActiveTab('settings')} />}
+        <div className="max-w-6xl mx-auto pb-20">
+          {activeTab === 'hero' && <Hero 
+            onInventoryOpen={() => setActiveTab('inventory')} 
+            onConfigOpen={() => setActiveTab('settings')}
+            onTrophiesOpen={() => setActiveTab('trophies')}
+            onGuideOpen={() => setActiveTab('guide')}
+          />}
           {activeTab === 'quests' && <Quests />}
           {activeTab === 'habits' && <Habits />}
           {activeTab === 'shop' && <Shop />}
           {activeTab === 'inventory' && <Inventory />}
           {activeTab === 'settings' && <Settings showCRT={showCRT} onToggleCRT={() => setShowCRT(!showCRT)} />}
+          {activeTab === 'trophies' && <Trophies />}
+          {activeTab === 'guide' && <SageGuide />}
         </div>
       </main>
 
@@ -103,7 +111,7 @@ const MainAppContent = () => {
           <NavBtn active={activeTab === 'hero'} onClick={() => setActiveTab('hero')} icon="shield_person" label="Hero" />
           <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
           <NavBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon="backpack" label="Items" />
-          <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits'} icon="history_edu" label="Habits" />
+          <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="history_edu" label="Habits" />
           <NavBtn active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon="storefront" label="Shop" />
         </div>
       </nav>

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { CharacterClass } from '../types';
+import { CharacterClass, AttributeType } from '../types';
 
 interface SettingsProps {
   showCRT: boolean;
@@ -9,6 +9,7 @@ interface SettingsProps {
 }
 
 const CLASSES: CharacterClass[] = ['Paladin', 'Warrior', 'Mage', 'Rogue', 'Bard'];
+const ALIGNMENTS: AttributeType[] = ['STR', 'INT', 'FOC'];
 const AVAILABLE_ICONS = ['swords', 'fitness_center', 'menu_book', 'home', 'palette', 'code', 'psychology', 'star', 'pets', 'local_fire_department', 'school', 'work', 'rocket_launch'];
 const AVAILABLE_COLORS = [
   { label: 'Blue', class: 'bg-blue-600' },
@@ -25,10 +26,10 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
   const { user, updateUserClass, resetProgress, logout, addCategory, deleteCategory } = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
   
-  // New Category State
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('star');
   const [newCatColor, setNewCatColor] = useState('bg-blue-600');
+  const [newCatAlignment, setNewCatAlignment] = useState<AttributeType>('FOC');
 
   if (!user) return null;
 
@@ -49,7 +50,7 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatLabel.trim()) return;
-    addCategory({ label: newCatLabel, icon: newCatIcon, color: newCatColor });
+    addCategory({ label: newCatLabel, icon: newCatIcon, color: newCatColor, alignment: newCatAlignment });
     setNewCatLabel('');
   };
 
@@ -61,7 +62,6 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Character Config */}
         <section className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel-card">
            <h3 className="font-pixel text-xs text-white mb-8 border-b-2 border-white/10 pb-4 uppercase">Character Identity</h3>
            
@@ -92,7 +92,6 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
            </div>
         </section>
 
-        {/* System Settings */}
         <section className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel-card">
            <h3 className="font-pixel text-xs text-white mb-8 border-b-2 border-white/10 pb-4 uppercase">Reality Engine</h3>
            
@@ -130,7 +129,6 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
            </div>
         </section>
 
-        {/* Quest Categories Management */}
         <section className="lg:col-span-2 bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel-card">
            <h3 className="font-pixel text-xs text-white mb-8 border-b-2 border-white/10 pb-4 uppercase">Quest Categories</h3>
            
@@ -146,6 +144,22 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
                     placeholder="CATEGORY NAME..."
                   />
                   
+                  <div>
+                    <label className="text-gray-400 text-[8px] font-pixel block mb-2">ATTRIBUTE ALIGNMENT</label>
+                    <div className="grid grid-cols-3 gap-2">
+                       {ALIGNMENTS.map(align => (
+                         <button 
+                           key={align}
+                           type="button"
+                           onClick={() => setNewCatAlignment(align)}
+                           className={`p-2 border-2 font-pixel text-[8px] transition-all ${newCatAlignment === align ? 'border-primary bg-primary text-black' : 'border-rpg-slate text-gray-500'}`}
+                         >
+                           {align}
+                         </button>
+                       ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-gray-400 text-[8px] font-pixel block mb-2">PICK ICON</label>
                     <div className="flex flex-wrap gap-2">
@@ -184,14 +198,17 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
 
               <div className="space-y-4">
                 <h4 className="text-primary text-[10px] font-pixel mb-4 uppercase">Existing Categories</h4>
-                <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                    {user.categories.map(cat => (
                      <div key={cat.id} className="flex items-center justify-between bg-black/40 p-3 rounded border-2 border-white/5 group">
                         <div className="flex items-center gap-3">
                            <div className={`size-8 rounded flex items-center justify-center ${cat.color}`}>
                               <span className="material-symbols-outlined text-white text-sm">{cat.icon}</span>
                            </div>
-                           <span className="text-white font-bold text-sm uppercase">{cat.label}</span>
+                           <div>
+                             <span className="text-white font-bold text-sm uppercase block leading-none mb-1">{cat.label}</span>
+                             <span className="text-[8px] font-pixel text-primary uppercase">{cat.alignment || 'FOC'} ALIGNED</span>
+                           </div>
                         </div>
                         <button 
                           onClick={() => deleteCategory(cat.id)}
@@ -205,10 +222,6 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
               </div>
            </div>
         </section>
-      </div>
-
-      <div className="text-center opacity-20">
-         <p className="font-pixel text-[8px] uppercase">Abhyasa Reality Engine v1.0.4 - Built for the Discerning Hero</p>
       </div>
     </div>
   );

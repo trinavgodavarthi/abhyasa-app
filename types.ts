@@ -1,11 +1,23 @@
 
 export type CharacterClass = 'Paladin' | 'Mage' | 'Rogue' | 'Warrior' | 'Bard';
+export type AttributeType = 'STR' | 'INT' | 'FOC';
 
 export interface Category {
   id: string;
   label: string;
   icon: string;
   color: string;
+  alignment: AttributeType;
+}
+
+export interface Trophy {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
+  condition: 'level' | 'quests' | 'gold' | 'habits';
+  threshold: number;
 }
 
 export interface UserData {
@@ -19,6 +31,12 @@ export interface UserData {
   inventory: InventoryItem[];
   characterClass?: CharacterClass;
   categories: Category[];
+  trophies: string[]; 
+  stats: {
+    str: number;
+    int: number;
+    foc: number;
+  };
 }
 
 export interface InventoryItem {
@@ -29,17 +47,19 @@ export interface InventoryItem {
   icon: string;
   quantity: number;
   type: 'item' | 'buff' | 'irl';
-  durability?: number; // Number of uses left for the current stack unit
-  expiryDate?: string; // ISO date for timed items
+  durability?: number; 
+  expiryDate?: string; 
 }
 
 export interface Task {
   id: string;
   title: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  category: string; // Dynamic ID
+  category: string; 
   completed: boolean;
   createdAt: any;
+  timeEstimate?: number; 
+  timeSpent?: number; 
 }
 
 export interface Habit {
@@ -47,7 +67,8 @@ export interface Habit {
   title: string;
   currentStreak: number;
   lastCompleted: any;
-  mastered: boolean; // 21 days
+  mastered: boolean; 
+  targetDays: number; // Custom goal target
 }
 
 export interface Reward {
