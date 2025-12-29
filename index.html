@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abhyasa - RPG Productivity</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Press+Start+2P&family=Orbitron:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f2cc0d",
+                        "rpg-slate": "#4C6485",
+                        "rpg-deep-slate": "#2A3346",
+                        "rpg-sand": "#D6AA76",
+                        "rpg-red": "#C25E49",
+                        "rpg-green": "#7AC456",
+                        "rpg-paper": "#E8D0AA",
+                        "background-dark": "#111722",
+                        "rpg-brown": "#3d2b1f",
+                        "rpg-brown-light": "#5a4636",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "pixel": ["'Press Start 2P'", "cursive"],
+                        "ui": ["Orbitron", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'pixel': '4px 4px 0px rgba(0, 0, 0, 0.25)',
+                        'pixel-card': '8px 8px 0px rgba(0, 0, 0, 0.3)',
+                        'pixel-lg': '12px 12px 0px rgba(0, 0, 0, 0.35)',
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .pixelated {
+            image-rendering: pixelated;
+        }
+
+        .crt-overlay {
+            pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 3px 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            opacity: 0.4;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111722;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4C6485;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f2cc0d;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            ::before,
+            ::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            ::-webkit-scrollbar {
+                display: none;
+            }
+
+            .crt-overlay {
+                opacity: 0.2 !important;
+            }
+        }
+    </style>
+  <script type="module" crossorigin src="/abhyasa-app/assets/index-BP02TvW8.js"></script>
+</head>
+
+<body class="bg-background-dark text-white font-display min-h-screen">
+    <div id="root"></div>
+    <div class="crt-overlay"></div>
+</body>
+
+</html>
