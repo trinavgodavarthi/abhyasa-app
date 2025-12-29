@@ -23,8 +23,10 @@ const AVAILABLE_COLORS = [
 ];
 
 const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
-  const { user, updateUserClass, resetProgress, logout, addCategory, deleteCategory } = useGame();
+  const { user, updateUserClass, updateUsername, resetProgress, logout, addCategory, deleteCategory } = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState(user?.username || '');
   
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('star');
@@ -35,6 +37,13 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
 
   const handleClassSelect = (c: CharacterClass) => {
     updateUserClass(c);
+  };
+
+  const handleUpdateName = () => {
+    if (newName.trim() && newName !== user.username) {
+      updateUsername(newName);
+    }
+    setEditingName(false);
   };
 
   const handleReset = () => {
@@ -65,7 +74,29 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
         <section className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel-card">
            <h3 className="font-pixel text-xs text-white mb-8 border-b-2 border-white/10 pb-4 uppercase">Character Identity</h3>
            
-           <div className="space-y-6">
+           <div className="space-y-8">
+              <div>
+                <label className="text-rpg-sand text-[10px] font-pixel block mb-4 uppercase">Heroic Title</label>
+                {editingName ? (
+                  <div className="flex gap-2">
+                    <input 
+                      value={newName}
+                      onChange={e => setNewName(e.target.value)}
+                      className="flex-1 bg-black/60 border-2 border-primary p-3 text-white font-pixel text-[10px] outline-none"
+                    />
+                    <button onClick={handleUpdateName} className="bg-primary text-black px-4 font-pixel text-[8px] border-b-4 border-black">SEAL</button>
+                    <button onClick={() => setEditingName(false)} className="bg-gray-700 text-white px-4 font-pixel text-[8px] border-b-4 border-black">X</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-black/40 border-2 border-rpg-slate p-4 text-white font-bold group">
+                    <span className="uppercase tracking-tighter">{user.username}</span>
+                    <button onClick={() => setEditingName(true)} className="text-primary hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="text-rpg-sand text-[10px] font-pixel block mb-4 uppercase">Selected Class</label>
                 <div className="flex flex-wrap gap-2">
@@ -79,14 +110,6 @@ const Settings: React.FC<SettingsProps> = ({ showCRT, onToggleCRT }) => {
                        {c}
                      </button>
                    ))}
-                </div>
-              </div>
-
-              <div className="pt-4">
-                <label className="text-rpg-sand text-[10px] font-pixel block mb-2 uppercase">Display Name</label>
-                <div className="bg-black/40 border-2 border-rpg-slate p-4 text-white font-bold opacity-50 cursor-not-allowed">
-                  {user.username}
-                  <span className="text-[8px] ml-2 text-gray-500">(LOCKED)</span>
                 </div>
               </div>
            </div>

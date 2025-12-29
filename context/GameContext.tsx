@@ -13,14 +13,15 @@ interface GameContextType {
   logout: () => void;
   resetProgress: () => Promise<void>;
   updateUserClass: (c: CharacterClass) => Promise<void>;
+  updateUsername: (newU: string) => Promise<void>;
   addCategory: (cat: Omit<Category, 'id'>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   tasks: Task[];
   habits: Habit[];
-  addGoal: (title: string, description: string, targetValue: number, icon: string, color: string) => Promise<void>;
+  addGoal: (title: string, description: string, targetValue: number, icon: string, color: string, deadline?: string) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   claimGoalReward: (id: string) => Promise<void>;
-  addQuest: (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, goalId?: string, timeEstimate?: number) => Promise<void>;
+  addQuest: (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, goalId?: string, timeEstimate?: number, deadline?: string) => Promise<void>;
   completeTask: (task: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskTime: (taskId: string, minutes: number) => Promise<void>;
@@ -160,6 +161,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser({ ...user, characterClass: c });
   };
 
+  const updateUsername = async (newU: string) => {
+    if (!user || !newU.trim() || newU === user.username) return;
+    const success = await storage.renameUser(user.username, newU);
+    if (success) {
+      localStorage.setItem('abhyasa_active_user', newU);
+      setUser({ ...user, username: newU });
+    }
+  };
+
   const addCategory = async (cat: Omit<Category, 'id'>) => {
     if (!user) return;
     const newCat = { ...cat, id: Math.random().toString(36).substr(2, 9) };
@@ -175,13 +185,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser({ ...user, categories: updatedCats });
   };
 
-  const addGoal = async (title: string, description: string, targetValue: number, icon: string, color: string) => {
+  const addGoal = async (title: string, description: string, targetValue: number, icon: string, color: string, deadline?: string) => {
     if (!user) return;
     const newGoal: Goal = {
       id: Math.random().toString(36).substr(2, 9),
       title, description, targetValue, currentValue: 0,
       icon, color, completed: false, rewardClaimed: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      deadline: deadline || undefined
     };
     const updatedGoals = [...user.goals, newGoal];
     await storage.updateUser(user.username, { goals: updatedGoals });
@@ -220,11 +231,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser({ ...user, goals: updatedGoals, gold: user.gold + goldReward, xp: newXP, level: newLevel });
   };
 
-  const addQuest = async (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, goalId?: string, timeEstimate?: number) => {
+  const addQuest = async (title: string, difficulty: 'easy' | 'medium' | 'hard', category: string, goalId?: string, timeEstimate?: number, deadline?: string) => {
     if (!user) return;
     const newTask = await storage.addTask(user.username, { 
       title, difficulty, category, goalId, completed: false, 
-      timeEstimate: timeEstimate || 0, timeSpent: 0 
+      timeEstimate: timeEstimate || 0, timeSpent: 0,
+      deadline: deadline || undefined
     });
     setTasks(prev => [...prev, newTask]);
   };
@@ -386,7 +398,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <GameContext.Provider value={{ 
-      user, loading, signup, login, logout, resetProgress, updateUserClass, 
+      user, loading, signup, login, logout, resetProgress, updateUserClass, updateUsername,
       addCategory, deleteCategory, tasks, habits, addQuest, completeTask, 
       deleteTask, updateTaskTime, addHabit, updateHabit, completeHabit, deleteHabit, 
       buyReward, useItem, updateHP, checkTrophies, addGoal, deleteGoal, claimGoalReward

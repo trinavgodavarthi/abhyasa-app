@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
-import { GoogleGenAI } from "@google/genai";
 import { CharacterClass } from '../types';
+import { formatDistanceToNow, isPast, isToday, addDays } from 'date-fns';
 
 interface HeroProps {
   onInventoryOpen?: () => void;
@@ -11,10 +11,20 @@ interface HeroProps {
   onGuideOpen?: () => void;
 }
 
+const PROPHECIES = [
+  "True strength is found in the repetition of small acts.",
+  "The sharpest blade is forged in the hottest fire.",
+  "A journey of a thousand leagues begins with a single step.",
+  "Discipline is the bridge between goals and accomplishment.",
+  "The stars favor those who master their own fate.",
+  "Wisdom is knowing the path; character is walking it.",
+  "Even the mightiest oak was once a vulnerable seed.",
+  "Victory belongs to the most persevering.",
+];
+
 const Hero: React.FC<HeroProps> = ({ onInventoryOpen, onConfigOpen, onTrophiesOpen, onGuideOpen }) => {
   const { user, tasks, updateTaskTime } = useGame();
   const [prophecy, setProphecy] = useState<string>('');
-  const [loadingProphecy, setLoadingProphecy] = useState(false);
   
   const [activeQuestId, setActiveQuestId] = useState<string>('');
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -26,8 +36,16 @@ const Hero: React.FC<HeroProps> = ({ onInventoryOpen, onConfigOpen, onTrophiesOp
   const activeCategory = user?.categories.find(c => c.id === activeQuest?.category);
   const alignment = activeCategory?.alignment || 'FOC';
 
+  // Find urgent quests (deadlines in the next 3 days or overdue)
+  const impendingOmens = tasks
+    .filter(t => !t.completed && t.deadline)
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+    .slice(0, 3);
+
   useEffect(() => {
-    if (user && !prophecy) fetchProphecy();
+    if (user && !prophecy) {
+      getRandomProphecy();
+    }
   }, [user]);
 
   useEffect(() => {
@@ -41,24 +59,9 @@ const Hero: React.FC<HeroProps> = ({ onInventoryOpen, onConfigOpen, onTrophiesOp
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isTimerActive, isPaused]);
 
-  const fetchProphecy = async () => {
-    if (!process.env.API_KEY || !user) return;
-    setLoadingProphecy(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `RPG Oracle prophecy for lvl ${user.level} ${user.characterClass}. Motivating one-sentence prophecy. Keep it cryptic, inspiring, and very brief.`,
-        config: {
-          systemInstruction: "You are a cryptic RPG oracle speaking to a hero. Your tone is archaic but motivating.",
-        }
-      });
-      setProphecy(response.text || "The stars are in alignment.");
-    } catch (e) {
-      setProphecy("Steel your resolve, champion.");
-    } finally {
-      setLoadingProphecy(false);
-    }
+  const getRandomProphecy = () => {
+    const random = PROPHECIES[Math.floor(Math.random() * PROPHECIES.length)];
+    setProphecy(random);
   };
 
   const handleFinishFocus = async () => {
@@ -228,30 +231,63 @@ const Hero: React.FC<HeroProps> = ({ onInventoryOpen, onConfigOpen, onTrophiesOp
 
         {/* Right Column: Stats & Meta */}
         <div className="lg:col-span-5 flex flex-col gap-10">
+          {/* Impending Omens - Deadline Tracking */}
+          <div className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel relative overflow-hidden">
+             <div className="flex justify-between items-center mb-6 border-b-2 border-white/5 pb-4">
+                <h3 className="font-pixel text-[10px] text-primary uppercase tracking-tighter">Impending Omens</h3>
+                <span className="material-symbols-outlined text-primary/40 text-sm">hourglass_empty</span>
+             </div>
+             
+             <div className="space-y-4">
+                {impendingOmens.length === 0 ? (
+                  <div className="py-6 text-center opacity-30 italic text-[9px] font-pixel text-gray-500">
+                    No dire prophecies recorded...
+                  </div>
+                ) : (
+                  impendingOmens.map(omen => {
+                    const isOverdue = isPast(new Date(omen.deadline!));
+                    return (
+                      <div key={omen.id} className={`p-4 border-2 flex items-center justify-between transition-all group hover:bg-black/20 ${isOverdue ? 'border-rpg-red/40 bg-rpg-red/5 animate-pulse' : 'border-white/5 bg-black/10'}`}>
+                        <div className="min-w-0">
+                          <p className={`text-[10px] font-black uppercase truncate italic ${isOverdue ? 'text-rpg-red' : 'text-white'}`}>{omen.title}</p>
+                          <p className={`text-[7px] font-pixel mt-1 uppercase ${isOverdue ? 'text-rpg-red/60' : 'text-gray-500'}`}>
+                            {isOverdue ? 'CURSED: EXPIRED' : `DUE: ${formatDistanceToNow(new Date(omen.deadline!))} left`}
+                          </p>
+                        </div>
+                        <span className={`material-symbols-outlined text-lg ${isOverdue ? 'text-rpg-red' : 'text-primary/40'}`}>
+                          {isOverdue ? 'skull' : 'event'}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+             </div>
+          </div>
+
           {/* Attributes Card */}
-          <div className="bg-rpg-deep-slate border-4 border-rpg-slate p-10 shadow-pixel relative overflow-hidden">
+          <div className="bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel relative overflow-hidden">
             <span className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-              <span className="material-symbols-outlined text-9xl">stat_3</span>
+              <span className="material-symbols-outlined text-8xl">stat_3</span>
             </span>
-            <h3 className="font-pixel text-[12px] text-white mb-10 border-b-4 border-white/5 pb-5 uppercase tracking-tighter">Heroic Attributes</h3>
+            <h3 className="font-pixel text-[10px] text-white mb-8 border-b-2 border-white/5 pb-4 uppercase tracking-tighter">Heroic Attributes</h3>
             
-            <div className="space-y-10">
+            <div className="space-y-8">
               <AttributeRow icon="fitness_center" color="text-rpg-red" fill="bg-rpg-red" label="STR" value={user.stats.str} title="Physical Strength" />
               <AttributeRow icon="menu_book" color="text-blue-400" fill="bg-blue-400" label="INT" value={user.stats.int} title="Arcane Knowledge" />
               <AttributeRow icon="bolt" color="text-primary" fill="bg-primary" label="FOC" value={user.stats.foc} title="Spiritual Focus" />
             </div>
 
-            <div className="mt-12 pt-8 border-t-4 border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="size-10 bg-primary/20 flex items-center justify-center text-primary border-2 border-primary/40 font-black text-lg">$</div>
+            <div className="mt-8 pt-6 border-t-2 border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-8 bg-primary/20 flex items-center justify-center text-primary border-2 border-primary/40 font-black text-xs">$</div>
                 <div>
-                   <p className="text-[9px] text-gray-500 font-black uppercase leading-none mb-2">Vault Balance</p>
-                   <p className="text-2xl font-black text-primary leading-none tabular-nums tracking-tighter">{user.gold} GOLD</p>
+                   <p className="text-[7px] text-gray-500 font-black uppercase leading-none mb-1">Vault</p>
+                   <p className="text-lg font-black text-primary leading-none tabular-nums tracking-tighter">{user.gold} GOLD</p>
                 </div>
               </div>
               <button 
                 onClick={onInventoryOpen}
-                className="text-[9px] font-pixel text-gray-500 hover:text-white uppercase underline underline-offset-8 transition-colors"
+                className="text-[7px] font-pixel text-gray-500 hover:text-white uppercase underline underline-offset-4 transition-colors"
               >
                 Ledger
               </button>
@@ -266,26 +302,23 @@ const Hero: React.FC<HeroProps> = ({ onInventoryOpen, onConfigOpen, onTrophiesOp
              <QuickNavBtn icon="auto_stories" label="TOME" onClick={onGuideOpen} />
           </div>
 
-          {/* Prophecy Scroll - High Flavor Text */}
-          <div className="mt-auto bg-rpg-paper border-4 border-[#3d2b1f] p-8 shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+          {/* Prophecy Scroll */}
+          <div className="mt-auto bg-rpg-paper border-4 border-[#3d2b1f] p-6 shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
              <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
              
              <div className="relative">
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[#3d2b1f] text-2xl animate-pulse">auto_awesome</span>
-                    <span className="text-[#3d2b1f] font-pixel text-[9px] uppercase font-black tracking-widest">Today's Omen</span>
+                    <span className="material-symbols-outlined text-[#3d2b1f] text-xl animate-pulse">auto_awesome</span>
+                    <span className="text-[#3d2b1f] font-pixel text-[8px] uppercase font-black tracking-widest">Today's Omen</span>
                   </div>
-                  <button onClick={fetchProphecy} className="text-[#3d2b1f]/40 hover:text-[#3d2b1f] transition-colors">
-                    <span className="material-symbols-outlined text-lg">refresh</span>
+                  <button onClick={getRandomProphecy} className="text-[#3d2b1f]/40 hover:text-[#3d2b1f] transition-colors">
+                    <span className="material-symbols-outlined text-base">refresh</span>
                   </button>
                 </div>
-                <p className="text-[#3d2b1f] italic text-lg font-serif leading-relaxed line-clamp-4 relative z-10">
-                  {loadingProphecy ? "The oracle is gazing into the void..." : `"${prophecy}"`}
+                <p className="text-[#3d2b1f] italic text-base font-serif leading-relaxed line-clamp-3 relative z-10">
+                  {`"${prophecy}"`}
                 </p>
-                <div className="mt-6 flex justify-end">
-                   <span className="text-[7px] font-pixel text-[#3d2b1f]/30 uppercase">— The Archon Oracle</span>
-                </div>
              </div>
           </div>
         </div>
@@ -314,21 +347,20 @@ const AttributeRow = ({ icon, color, fill, label, value, title }: any) => {
   return (
     <div className="group/row">
       <div className="flex justify-between items-end mb-2">
-        <div className={`flex items-center gap-3 ${color} transition-all group-hover/row:translate-x-1`}>
-          <span className="material-symbols-outlined text-xl font-black">{icon}</span>
+        <div className={`flex items-center gap-2 ${color} transition-all group-hover/row:translate-x-1`}>
+          <span className="material-symbols-outlined text-lg font-black">{icon}</span>
           <div className="flex flex-col">
-            <span className="text-[11px] font-black uppercase tracking-widest leading-none">{label}</span>
-            <span className="text-[7px] text-gray-500 uppercase font-bold leading-none mt-1 opacity-60">{title}</span>
+            <span className="text-[9px] font-black uppercase tracking-widest leading-none">{label}</span>
+            <span className="text-[6px] text-gray-500 uppercase font-bold leading-none mt-1 opacity-60">{title}</span>
           </div>
         </div>
         <div className="text-right">
-           <span className="text-white/80 font-pixel text-[8px] uppercase tracking-tighter">Rank {level}</span>
+           <span className="text-white/80 font-pixel text-[7px] uppercase tracking-tighter">Rank {level}</span>
         </div>
       </div>
-      <div className="h-4 w-full bg-black/60 rounded-none border-2 border-white/5 overflow-hidden shadow-inner flex p-[2px]">
-        <div className={`h-full ${fill} transition-all duration-1000 relative shadow-[0_0_10px_rgba(255,255,255,0.1)]`} style={{ width: `${progress}%` }}>
+      <div className="h-3 w-full bg-black/60 rounded-none border-2 border-white/5 overflow-hidden shadow-inner flex p-[1px]">
+        <div className={`h-full ${fill} transition-all duration-1000 relative`} style={{ width: `${progress}%` }}>
            <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/20"></div>
-           {progress > 90 && <div className="absolute inset-0 bg-white/30 animate-pulse"></div>}
         </div>
       </div>
     </div>
@@ -338,11 +370,11 @@ const AttributeRow = ({ icon, color, fill, label, value, title }: any) => {
 const QuickNavBtn = ({ icon, label, onClick }: any) => (
   <button 
     onClick={onClick}
-    className="aspect-square bg-rpg-deep-slate border-4 border-rpg-slate hover:border-primary hover:bg-black/40 transition-all flex flex-col items-center justify-center gap-3 group shadow-pixel active:translate-y-1 overflow-hidden relative"
+    className="aspect-square bg-rpg-deep-slate border-4 border-rpg-slate hover:border-primary hover:bg-black/40 transition-all flex flex-col items-center justify-center gap-2 group shadow-pixel active:translate-y-1 overflow-hidden relative"
   >
     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-    <span className="material-symbols-outlined text-gray-500 group-hover:text-primary text-3xl group-hover:scale-110 transition-transform relative z-10">{icon}</span>
-    <span className="text-[8px] font-pixel text-gray-600 group-hover:text-white uppercase tracking-tighter relative z-10">{label}</span>
+    <span className="material-symbols-outlined text-gray-500 group-hover:text-primary text-2xl transition-transform relative z-10">{icon}</span>
+    <span className="text-[7px] font-pixel text-gray-600 group-hover:text-white uppercase tracking-tighter relative z-10">{label}</span>
   </button>
 );
 

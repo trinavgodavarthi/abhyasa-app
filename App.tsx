@@ -44,11 +44,9 @@ const MainAppContent = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden selection:bg-primary selection:text-black">
-      {/* Top HUD - Advanced RPG Dashboard Header */}
+      {/* Top HUD */}
       <header className="bg-black/80 border-b-4 border-rpg-deep-slate p-4 z-40 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-6">
-          
-          {/* Avatar & Class Info */}
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setActiveTab('hero')}>
              <div className="relative">
                <div className="size-14 rounded-none bg-rpg-deep-slate border-4 border-primary/40 group-hover:border-primary pixelated overflow-hidden transition-all shadow-[0_0_15px_rgba(242,204,13,0.1)]">
@@ -66,7 +64,6 @@ const MainAppContent = () => {
              </div>
           </div>
 
-          {/* Vitals & Progress Section */}
           <div className="flex-1 max-w-sm space-y-3">
             <div className="relative">
               <div className="flex justify-between text-[7px] font-pixel px-1 text-rpg-red/80 mb-1 uppercase">
@@ -88,7 +85,6 @@ const MainAppContent = () => {
             </div>
           </div>
 
-          {/* Currencies & Quick Stats */}
           <div className="flex items-center gap-4">
             <div className="bg-black/40 px-3 py-2 border-2 border-orange-500/20 flex items-center gap-3 group transition-all hover:border-orange-500 hover:shadow-[0_0_10px_rgba(249,115,22,0.2)]">
               <span className="material-symbols-outlined text-orange-500 text-lg animate-pulse">local_fire_department</span>
@@ -97,7 +93,6 @@ const MainAppContent = () => {
                 <p className="font-pixel text-[10px] text-orange-500 leading-none">{user.dailyStreak || 0}</p>
               </div>
             </div>
-            
             <div className="bg-black/40 px-3 py-2 border-2 border-primary/20 flex items-center gap-3 transition-all hover:border-primary">
               <span className="material-symbols-outlined text-primary text-lg">payments</span>
               <div>
@@ -105,7 +100,6 @@ const MainAppContent = () => {
                 <p className="font-pixel text-[10px] text-primary leading-none tabular-nums">{user.gold}</p>
               </div>
             </div>
-
             <button onClick={() => setActiveTab('settings')} className="size-10 flex items-center justify-center hover:bg-white/5 text-gray-500 hover:text-primary transition-all rounded">
               <span className="material-symbols-outlined text-2xl">tune</span>
             </button>
@@ -123,26 +117,26 @@ const MainAppContent = () => {
             onGuideOpen={() => setActiveTab('guide')}
           />}
           {activeTab === 'quests' && <Quests />}
+          {activeTab === 'goals' && <Goals />}
           {activeTab === 'habits' && <Habits />}
           {activeTab === 'shop' && <Shop />}
           {activeTab === 'inventory' && <Inventory />}
           {activeTab === 'settings' && <Settings showCRT={showCRT} onToggleCRT={() => setShowCRT(!showCRT)} />}
           {activeTab === 'trophies' && <Trophies />}
           {activeTab === 'guide' && <SageGuide />}
-          {activeTab === 'goals' && <Goals />}
           {activeTab === 'chronicler' && <Chronicler />}
         </div>
       </main>
 
-      {/* Navigation Footer - Solid RPG Panel */}
+      {/* Navigation Footer */}
       <nav className="bg-rpg-deep-slate border-t-4 border-black p-3 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <div className="max-w-4xl mx-auto flex justify-around sm:gap-4 overflow-x-auto no-scrollbar">
           <NavBtn active={activeTab === 'hero'} onClick={() => setActiveTab('hero')} icon="shield_person" label="Hero" />
-          <NavBtn active={activeTab === 'chronicler'} onClick={() => setActiveTab('chronicler')} icon="history_edu" label="Stats" />
+          <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
           <NavBtn active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon="architecture" label="Legacy" />
           <NavBtn active={activeTab === 'habits'} onClick={() => setActiveTab('habits')} icon="fitness_center" label="Habits" />
-          <NavBtn active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} icon="swords" label="Quests" />
           <NavBtn active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon="storefront" label="Shop" />
+          <NavBtn active={activeTab === 'chronicler'} onClick={() => setActiveTab('chronicler')} icon="history_edu" label="Stats" />
         </div>
       </nav>
     </div>

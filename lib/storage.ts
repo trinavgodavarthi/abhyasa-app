@@ -44,6 +44,33 @@ export const storage = {
     }
   },
 
+  // Migration for username change
+  async renameUser(oldUsername: string, newUsername: string) {
+    const db = getDB();
+    if (db.users[oldUsername]) {
+      // Move User Data
+      const userData = { ...db.users[oldUsername], username: newUsername };
+      db.users[newUsername] = userData;
+      delete db.users[oldUsername];
+
+      // Move Tasks
+      if (db.tasks[oldUsername]) {
+        db.tasks[newUsername] = db.tasks[oldUsername];
+        delete db.tasks[oldUsername];
+      }
+
+      // Move Habits
+      if (db.habits[oldUsername]) {
+        db.habits[newUsername] = db.habits[oldUsername];
+        delete db.habits[oldUsername];
+      }
+
+      saveDB(db);
+      return true;
+    }
+    return false;
+  },
+
   // Collection operations for Tasks
   async getTasks(username: string) {
     const db = getDB();

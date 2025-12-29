@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
+import { formatDistanceToNow, isPast } from 'date-fns';
 
 const AVAILABLE_ICONS = ['castle', 'temple_buddhist', 'foundation', 'architecture', 'workspace_premium', 'military_tech', 'star', 'auto_awesome', 'diamond'];
 const AVAILABLE_COLORS = [
@@ -19,13 +20,14 @@ const Goals: React.FC = () => {
   const [target, setTarget] = useState(100);
   const [icon, setIcon] = useState('castle');
   const [color, setColor] = useState('bg-primary');
+  const [deadline, setDeadline] = useState('');
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    await addGoal(title, desc, target, icon, color);
+    await addGoal(title, desc, target, icon, color, deadline);
     setShowAdd(false);
-    setTitle(''); setDesc(''); setTarget(100);
+    setTitle(''); setDesc(''); setTarget(100); setDeadline('');
   };
 
   if (!user) return null;
@@ -82,6 +84,12 @@ const Goals: React.FC = () => {
                   <input type="number" min="10" value={target} onChange={e => setTarget(parseInt(e.target.value))} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none" />
                 </div>
                 <div>
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Completion Prophecy (Date)</label>
+                  <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
                    <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Heraldic Color</label>
                    <div className="flex gap-2">
                      {AVAILABLE_COLORS.map(c => (
@@ -89,16 +97,16 @@ const Goals: React.FC = () => {
                      ))}
                    </div>
                 </div>
-              </div>
-              <div>
-                 <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Project Totem</label>
-                 <div className="flex flex-wrap gap-2">
-                   {AVAILABLE_ICONS.map(i => (
-                     <button key={i} type="button" onClick={() => setIcon(i)} className={`p-3 border-2 transition-all ${icon === i ? 'border-primary bg-primary/20 text-primary' : 'border-rpg-slate text-gray-500'}`}>
-                       <span className="material-symbols-outlined">{i}</span>
-                     </button>
-                   ))}
-                 </div>
+                <div>
+                   <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Project Totem</label>
+                   <div className="flex flex-wrap gap-2">
+                     {AVAILABLE_ICONS.map(i => (
+                       <button key={i} type="button" onClick={() => setIcon(i)} className={`p-3 border-2 transition-all ${icon === i ? 'border-primary bg-primary/20 text-primary' : 'border-rpg-slate text-gray-500'}`}>
+                         <span className="material-symbols-outlined">{i}</span>
+                       </button>
+                     ))}
+                   </div>
+                </div>
               </div>
               <div className="flex gap-4 pt-4">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-5 bg-gray-700 text-white font-pixel text-[9px] border-b-4 border-black uppercase tracking-tighter">Cancel</button>
@@ -116,9 +124,12 @@ const GoalCard = ({ goal, onDelete, onClaim }: any) => {
   const progress = Math.min(100, (goal.currentValue / goal.targetValue) * 100);
   const isCompleted = goal.completed;
 
+  const deadlineDate = goal.deadline ? new Date(goal.deadline) : null;
+  const isOverdue = deadlineDate ? isPast(deadlineDate) && !isCompleted : false;
+
   return (
     <div className={`bg-rpg-deep-slate border-4 p-10 relative overflow-hidden group shadow-pixel transition-all hover:bg-black/40 flex flex-col gap-8 
-      ${isCompleted ? 'border-primary shadow-[0_0_30px_rgba(242,204,13,0.2)]' : 'border-rpg-slate'}`}>
+      ${isCompleted ? 'border-primary shadow-[0_0_30px_rgba(242,204,13,0.2)]' : isOverdue ? 'border-rpg-red animate-pulse' : 'border-rpg-slate'}`}>
       
       <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:scale-125 transition-transform duration-1000">
         <span className="material-symbols-outlined text-[120px]">{goal.icon}</span>
@@ -129,11 +140,23 @@ const GoalCard = ({ goal, onDelete, onClaim }: any) => {
           <div className={`size-14 mb-6 flex items-center justify-center border-4 shadow-pixel ${goal.color} border-white/20`}>
              <span className="material-symbols-outlined text-white text-3xl">{goal.icon}</span>
           </div>
-          <h3 className={`text-2xl font-black uppercase tracking-tighter mb-2 italic ${isCompleted ? 'text-primary' : 'text-white'}`}>{goal.title}</h3>
+          <h3 className={`text-2xl font-black uppercase tracking-tighter mb-2 italic ${isCompleted ? 'text-primary' : isOverdue ? 'text-rpg-red' : 'text-white'}`}>{goal.title}</h3>
           <p className="text-gray-500 text-xs font-medium italic line-clamp-2 leading-relaxed opacity-80">"{goal.description}"</p>
         </div>
         <button onClick={onDelete} className="p-2 text-gray-600 hover:text-rpg-red transition-colors opacity-0 group-hover:opacity-100"><span className="material-symbols-outlined">delete</span></button>
       </div>
+
+      {goal.deadline && (
+        <div className={`relative z-10 flex items-center gap-3 p-3 border-2 ${isOverdue ? 'bg-rpg-red/10 border-rpg-red/30 text-rpg-red' : 'bg-black/40 border-white/10 text-gray-400'}`}>
+           <span className="material-symbols-outlined text-lg">calendar_month</span>
+           <div className="flex flex-col">
+              <span className="text-[7px] font-pixel uppercase opacity-60">Completion Prophecy</span>
+              <span className="text-[10px] font-black uppercase tracking-tighter">
+                {isOverdue ? 'TIME HAS SLIPPED AWAY' : `${formatDistanceToNow(deadlineDate)} remains`}
+              </span>
+           </div>
+        </div>
+      )}
 
       <div className="space-y-4 relative z-10">
          <div className="flex justify-between items-end text-[9px] font-pixel text-gray-500 uppercase tracking-widest">

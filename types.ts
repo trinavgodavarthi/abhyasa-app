@@ -21,6 +21,7 @@ export interface Goal {
   completed: boolean;
   rewardClaimed: boolean;
   createdAt: string;
+  deadline?: string; // New field: The date by which the great work should be finished
 }
 
 export interface Trophy {
@@ -74,9 +75,10 @@ export interface Task {
   goalId?: string; // Linked goal
   completed: boolean;
   createdAt: any;
-  completedAt?: string; // New field for history
+  completedAt?: string; 
   timeEstimate?: number; 
   timeSpent?: number; 
+  deadline?: string; // New field: The quest's expiration date (Omen Date)
 }
 
 export interface Habit {

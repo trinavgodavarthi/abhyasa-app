@@ -1,40 +1,21 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../context/GameContext';
-import { GoogleGenAI } from "@google/genai";
+import { useGameLogic } from '../hooks/useGameLogic';
 import { format } from 'date-fns';
 
 const Chronicler: React.FC = () => {
   const { user, tasks } = useGame();
-  const [sageCounsel, setSageCounsel] = useState<string>('');
-  const [loadingCounsel, setLoadingCounsel] = useState(false);
-
-  useEffect(() => {
-    if (user) fetchSageCounsel();
+  const { getRequiredXP } = useGameLogic();
+  const [showRanks, setShowRanks] = useState(false);
+  
+  const sageCounsel = useMemo(() => {
+    if (!user) return "";
+    const { str, int, foc } = user.stats;
+    if (str <= int && str <= foc) return "The path of the warrior requires more than just thoughts; it requires action. Steel thy sinews, hero.";
+    if (int <= str && int <= foc) return "A blade is sharp, but a mind is sharper. Neglect not the scrolls of knowledge that wait in the shadows.";
+    return "True mastery comes not from strength or wit alone, but from the unwavering focus of the soul. Calm thy spirit.";
   }, [user?.stats]);
-
-  const fetchSageCounsel = async () => {
-    if (!process.env.API_KEY || !user) return;
-    setLoadingCounsel(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const { str, int, foc } = user.stats;
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Analyze these RPG stats: STR ${str}, INT ${int}, FOC ${foc}. 
-        Identify the most neglected area. Provide one cryptic yet wise paragraph of RPG-styled advice on what the hero should focus on next. 
-        Style: Ancient Sage from a high-fantasy world.`,
-        config: {
-          systemInstruction: "You are the Great Chronicler, a wise observer of heroic paths. Your tone is respectful, archaic, and insightful.",
-        }
-      });
-      setSageCounsel(response.text || "The weave of thy destiny is still forming.");
-    } catch (e) {
-      setSageCounsel("Balance is the key to ascension, young hero.");
-    } finally {
-      setLoadingCounsel(false);
-    }
-  };
 
   const history = useMemo(() => {
     return tasks
@@ -42,6 +23,27 @@ const Chronicler: React.FC = () => {
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
       .slice(0, 10);
   }, [tasks]);
+
+  const levelMilestones = useMemo(() => {
+    const list = [];
+    for (let i = 1; i <= 50; i++) {
+      let title = "Novice";
+      if (i >= 5) title = "Initiate";
+      if (i >= 10) title = "Apprentice";
+      if (i >= 15) title = "Squire";
+      if (i >= 20) title = "Knight";
+      if (i >= 30) title = "Champion";
+      if (i >= 40) title = "Grandmaster";
+      if (i >= 50) title = "Legend";
+      
+      list.push({
+        lvl: i,
+        title,
+        xp: getRequiredXP(i)
+      });
+    }
+    return list;
+  }, [getRequiredXP]);
 
   if (!user) return null;
 
@@ -90,7 +92,15 @@ const Chronicler: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Attribute Balance Radar */}
         <div className="lg:col-span-6 bg-rpg-deep-slate border-4 border-rpg-slate p-8 shadow-pixel relative flex flex-col items-center">
-          <h3 className="w-full font-pixel text-[10px] text-white mb-8 border-b-2 border-white/5 pb-4 uppercase tracking-tighter">Attribute Prowess Radar</h3>
+          <div className="w-full flex justify-between items-center mb-8 border-b-2 border-white/5 pb-4">
+            <h3 className="font-pixel text-[10px] text-white uppercase tracking-tighter">Attribute Prowess Radar</h3>
+            <button 
+              onClick={() => setShowRanks(true)}
+              className="text-primary font-pixel text-[8px] hover:underline underline-offset-4"
+            >
+              HALL OF RANKS
+            </button>
+          </div>
           
           <div className="relative">
             <svg width={size} height={size} className="overflow-visible">
@@ -141,17 +151,16 @@ const Chronicler: React.FC = () => {
             <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
             <div className="relative z-10 text-[#3d2b1f]">
                <div className="flex items-center gap-3 mb-6">
-                 <span className="material-symbols-outlined text-[#3d2b1f] text-2xl animate-pulse">psychology</span>
+                 <span className="material-symbols-outlined text-[#3d2b1f] text-2xl">psychology</span>
                  <h3 className="font-pixel text-[10px] uppercase font-black tracking-widest">Counsel of the Chronicler</h3>
                </div>
                
                <p className="italic text-lg font-serif leading-relaxed mb-6">
-                 {loadingCounsel ? "Consulting the constellations..." : sageCounsel}
+                 {sageCounsel}
                </p>
 
                <div className="flex items-center justify-between pt-6 border-t-2 border-[#3d2b1f]/10 mt-auto">
                  <span className="text-[7px] font-pixel text-[#3d2b1f]/40 uppercase">— Divine Guidance</span>
-                 <button onClick={fetchSageCounsel} className="text-[#3d2b1f]/60 hover:text-[#3d2b1f] transition-all"><span className="material-symbols-outlined text-lg">history_edu</span></button>
                </div>
             </div>
           </div>
@@ -181,6 +190,48 @@ const Chronicler: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Hall of Ranks Modal */}
+      {showRanks && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+          <div className="bg-rpg-paper border-4 border-[#3d2b1f] p-10 w-full max-w-2xl relative shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
+            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
+            
+            <div className="relative z-10 flex justify-between items-center mb-8 border-b-4 border-[#3d2b1f]/20 pb-4">
+              <h2 className="font-pixel text-[14px] text-[#3d2b1f] uppercase tracking-tighter">Hall of Heroic Ranks</h2>
+              <button onClick={() => setShowRanks(false)} className="text-[#3d2b1f] hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="relative z-10 overflow-y-auto custom-scrollbar flex-1 pr-4">
+              <div className="space-y-1">
+                <div className="grid grid-cols-4 text-[8px] font-pixel text-[#3d2b1f]/40 uppercase mb-4 px-4">
+                  <span>Level</span>
+                  <span className="col-span-2">Divine Title</span>
+                  <span className="text-right">Req. XP</span>
+                </div>
+                {levelMilestones.map(m => (
+                  <div 
+                    key={m.lvl} 
+                    className={`grid grid-cols-4 items-center p-4 border-b border-[#3d2b1f]/5 text-[#3d2b1f] transition-all
+                      ${user.level === m.lvl ? 'bg-[#3d2b1f]/10 font-black' : ''}
+                      ${user.level > m.lvl ? 'opacity-40' : ''}`}
+                  >
+                    <span className="font-pixel text-[10px]">Lvl {m.lvl}</span>
+                    <span className="col-span-2 font-black text-xs italic tracking-tight uppercase">{m.title}</span>
+                    <span className="text-right tabular-nums text-[9px] font-pixel">{m.xp}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative z-10 mt-8 pt-6 border-t-2 border-[#3d2b1f]/10 text-center">
+              <p className="text-[7px] font-pixel text-[#3d2b1f]/40 uppercase">"Each level is a notch on the blade of destiny."</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,9 +2,9 @@
 import React, { useState, useMemo } from 'react';
 import { useGame } from '../context/GameContext';
 import { Task } from '../types';
-import { GoogleGenAI, Type } from "@google/genai";
+import { formatDistanceToNow, isPast } from 'date-fns';
 
-type SortField = 'createdAt' | 'difficulty' | 'category';
+type SortField = 'createdAt' | 'difficulty' | 'category' | 'deadline';
 type SortOrder = 'asc' | 'desc';
 
 const Quests: React.FC = () => {
@@ -15,10 +15,10 @@ const Quests: React.FC = () => {
   const [newCatId, setNewCatId] = useState<string>('');
   const [newGoalId, setNewGoalId] = useState<string>('');
   const [newTimeEstimate, setNewTimeEstimate] = useState<number>(30);
+  const [newDeadline, setNewDeadline] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   React.useEffect(() => {
     if (user?.categories?.length && !newCatId) {
@@ -30,45 +30,11 @@ const Quests: React.FC = () => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     const cat = newCatId || (user?.categories?.[0]?.id || 'slaying');
-    await addQuest(newTitle, newDiff, cat, newGoalId || undefined, newTimeEstimate);
+    await addQuest(newTitle, newDiff, cat, newGoalId || undefined, newTimeEstimate, newDeadline);
     setNewTitle('');
     setNewGoalId('');
+    setNewDeadline('');
     setShowAdd(false);
-  };
-
-  const handleAISuggest = async () => {
-    if (!process.env.API_KEY || !user) return;
-    setIsAiLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Generate a creative, short RPG quest title for a productivity task based on this objective: "${newTitle || 'Generic self-improvement'}". 
-        Include a difficulty (easy, medium, or hard), select appropriate category ID from: ${user.categories.map(c => `${c.label} (ID: ${c.id})`).join(', ')}, and estimate time in minutes. Return JSON.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              difficulty: { type: Type.STRING, enum: ['easy', 'medium', 'hard'] },
-              category: { type: Type.STRING },
-              timeEstimate: { type: Type.NUMBER }
-            },
-            required: ['title', 'difficulty', 'category', 'timeEstimate']
-          }
-        }
-      });
-      const data = JSON.parse(response.text || '{}');
-      if (data.title) setNewTitle(data.title);
-      if (data.difficulty) setNewDiff(data.difficulty as any);
-      if (data.category) setNewCatId(data.category);
-      if (data.timeEstimate) setNewTimeEstimate(data.timeEstimate);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsAiLoading(false);
-    }
   };
 
   const toggleFilter = (catId: string | 'all') => {
@@ -83,6 +49,11 @@ const Quests: React.FC = () => {
       let comp = 0;
       if (sortBy === 'createdAt') comp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       else if (sortBy === 'difficulty') comp = {easy:1,medium:2,hard:3}[a.difficulty] - {easy:1,medium:2,hard:3}[b.difficulty];
+      else if (sortBy === 'deadline') {
+        const dateA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+        const dateB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+        comp = dateA - dateB;
+      }
       else {
         const catA = user?.categories.find(c => c.id === a.category)?.label || '';
         const catB = user?.categories.find(c => c.id === b.category)?.label || '';
@@ -159,10 +130,6 @@ const Quests: React.FC = () => {
               <div>
                 <div className="flex justify-between mb-3">
                   <label className="text-gray-500 text-[8px] font-pixel uppercase tracking-widest">Objective Designation</label>
-                  <button type="button" onClick={handleAISuggest} className="text-primary text-[8px] font-pixel flex items-center gap-2 hover:brightness-125 transition-all">
-                    <span className={`material-symbols-outlined text-sm ${isAiLoading ? 'animate-spin' : 'animate-pulse'}`}>auto_awesome</span>
-                    {isAiLoading ? 'SENSING...' : 'AI BRAINSTORM'}
-                  </button>
                 </div>
                 <input required value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/60 text-white p-5 border-2 border-rpg-slate outline-none focus:border-primary font-bold text-lg" placeholder="Enter objective..." />
               </div>
@@ -180,12 +147,18 @@ const Quests: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Link to Great Work (Optional)</label>
-                <select value={newGoalId} onChange={e => setNewGoalId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]">
-                  <option value="">-- NO GREAT WORK LINKED --</option>
-                  {user?.goals.map(g => <option key={g.id} value={g.id}>{g.title.toUpperCase()}</option>)}
-                </select>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Omen Date (Deadline)</label>
+                  <input type="date" value={newDeadline} onChange={e => setNewDeadline(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]" />
+                </div>
+                <div>
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Link to Great Work</label>
+                  <select value={newGoalId} onChange={e => setNewGoalId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]">
+                    <option value="">-- NONE --</option>
+                    {user?.goals.map(g => <option key={g.id} value={g.id}>{g.title.toUpperCase()}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -223,8 +196,17 @@ const QuestItem = ({ task, categories, goals, onComplete, onDelete }: any) => {
   const timeProgress = task.timeEstimate ? Math.min(100, ((task.timeSpent || 0) / task.timeEstimate) * 100) : 0;
   const alignment = cat?.alignment || 'FOC';
 
+  const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+  const isOverdue = deadlineDate ? isPast(deadlineDate) && !task.completed : false;
+
   return (
-    <div className="bg-[#E8D0AA] border-4 border-[#3d2b1f] p-6 rounded-none shadow-pixel-card group transition-all hover:translate-x-1 hover:shadow-2xl flex flex-col gap-5">
+    <div className={`bg-[#E8D0AA] border-4 border-[#3d2b1f] p-6 rounded-none shadow-pixel-card group transition-all hover:translate-x-1 hover:shadow-2xl flex flex-col gap-5 relative overflow-hidden ${isOverdue ? 'animate-pulse' : ''}`}>
+      {isOverdue && (
+        <div className="absolute top-0 right-0 bg-rpg-red text-white text-[6px] font-pixel px-4 py-1 rotate-45 translate-x-4 translate-y-2 shadow-lg z-20">
+          CURSED
+        </div>
+      )}
+      
       <div className="flex items-center gap-5">
         <div className="shrink-0 size-14 bg-[#3d2b1f] flex items-center justify-center rounded-none border-2 border-black/20 relative shadow-inner">
           <span className="material-symbols-outlined text-3xl text-primary">{cat?.icon || 'help'}</span>
@@ -241,12 +223,21 @@ const QuestItem = ({ task, categories, goals, onComplete, onDelete }: any) => {
           </div>
           <p className="text-[#3d2b1f]/40 text-[9px] font-black uppercase tracking-widest">{cat?.label || 'UNKNOWN'} EXPEDITION</p>
           {goal && (
-            <p className="text-primary bg-[#3d2b1f] text-[7px] font-pixel px-1 mt-2 inline-block uppercase animate-pulse">
-              Contributes to: {goal.title}
+            <p className="text-primary bg-[#3d2b1f] text-[7px] font-pixel px-1 mt-2 inline-block uppercase">
+              FOR: {goal.title}
             </p>
           )}
         </div>
       </div>
+
+      {task.deadline && (
+        <div className={`flex items-center gap-2 p-2 border-2 ${isOverdue ? 'bg-rpg-red/10 border-rpg-red/30 text-rpg-red' : 'bg-black/5 border-[#3d2b1f]/10 text-[#3d2b1f]'}`}>
+          <span className="material-symbols-outlined text-sm">hourglass_bottom</span>
+          <span className="text-[8px] font-pixel uppercase tracking-tighter">
+            Omen: {isOverdue ? 'EXPIRED' : `${formatDistanceToNow(deadlineDate)} left`}
+          </span>
+        </div>
+      )}
 
       <div className="space-y-2">
          <div className="flex justify-between items-end text-[9px] font-pixel text-[#3d2b1f]/60 uppercase tracking-tighter">
