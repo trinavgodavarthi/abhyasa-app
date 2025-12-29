@@ -22,11 +22,18 @@
                         "rpg-green": "#7AC456",
                         "rpg-paper": "#E8D0AA",
                         "background-dark": "#111722",
+                        "rpg-brown": "#3d2b1f",
+                        "rpg-brown-light": "#5a4636",
                     },
                     fontFamily: {
                         "display": ["Space Grotesk", "sans-serif"],
                         "pixel": ["'Press Start 2P'", "cursive"],
                         "ui": ["Orbitron", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'pixel': '4px 4px 0px rgba(0, 0, 0, 0.25)',
+                        'pixel-card': '8px 8px 0px rgba(0, 0, 0, 0.3)',
+                        'pixel-lg': '12px 12px 0px rgba(0, 0, 0, 0.35)',
                     },
                     animation: {
                         'float': 'float 3s ease-in-out infinite',
@@ -57,6 +64,18 @@
         ::-webkit-scrollbar-track { background: #111722; }
         ::-webkit-scrollbar-thumb { background: #4C6485; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #f2cc0d; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            ::-webkit-scrollbar { display: none; }
+            .crt-overlay { opacity: 0.2 !important; }
+        }
     </style>
 <script type="importmap">
 {
