@@ -68,18 +68,18 @@ const Quests: React.FC = () => {
   const completedQuests = sortedAndFilteredTasks.filter(t => t.completed);
 
   return (
-    <div className="bg-rpg-paper border-4 border-[#3d2b1f] shadow-pixel-card p-10 relative min-h-[600px] animate-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+    <div className="bg-rpg-paper border-4 border-rpg-brown shadow-pixel-card p-10 relative min-h-[600px] animate-in slide-in-from-bottom-4 duration-500 overflow-hidden">
       <div className="absolute inset-0 opacity-15 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')]"></div>
-      
+
       <div className="relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b-4 border-[#3d2b1f]/20 pb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b-4 border-rpg-brown/20 pb-6 gap-4">
            <div>
-             <h2 className="text-4xl font-black text-[#3d2b1f] tracking-tighter flex items-center gap-4">
+             <h2 className="text-2xl sm:text-4xl font-black text-rpg-brown tracking-tighter flex items-center gap-4">
                <span className="material-symbols-outlined text-5xl">auto_stories</span> QUEST LEDGER
              </h2>
-             <p className="text-[#3d2b1f] font-pixel text-[8px] uppercase tracking-widest mt-2 opacity-60">Mercenary Work & Divine Decrees</p>
+             <p className="text-rpg-brown font-pixel text-[8px] uppercase tracking-widest mt-2 opacity-60 font-bold">Mercenary Work & Divine Decrees</p>
            </div>
-           <button onClick={() => setShowAdd(true)} className="bg-primary text-black border-b-8 border-r-8 border-[#7a7a35] hover:brightness-110 active:border-0 active:translate-y-2 active:translate-x-2 px-10 py-5 font-pixel text-[10px] transition-all tracking-tighter">
+           <button onClick={() => setShowAdd(true)} className="bg-primary text-black border-b-8 border-r-8 border-[#b89a0a] hover:bg-yellow-400 active:border-b-0 active:border-r-0 active:translate-y-2 active:translate-x-2 px-8 py-4 font-pixel text-[10px] transition-colors duration-150 tracking-wide uppercase font-bold">
              ISSUE COMMAND
            </button>
         </div>
@@ -93,23 +93,23 @@ const Quests: React.FC = () => {
           {activeQuests.length > 0 ? (
             activeQuests.map(task => <QuestItem key={task.id} task={task} categories={user?.categories || []} goals={user?.goals || []} onComplete={() => completeTask(task)} onDelete={() => deleteTask(task.id)} />)
           ) : (
-            <div className="col-span-full py-20 bg-black/5 border-4 border-dashed border-[#3d2b1f]/20 text-center rounded">
-               <span className="material-symbols-outlined text-6xl text-[#3d2b1f]/20 mb-4">edit_document</span>
-               <p className="font-pixel text-[8px] text-[#3d2b1f]/40 uppercase tracking-widest">The Bounty Board is Bare</p>
+            <div className="col-span-full py-20 bg-black/5 border-4 border-dashed border-rpg-brown/20 text-center rounded">
+               <span className="material-symbols-outlined text-6xl text-rpg-brown/20 mb-4">edit_document</span>
+               <p className="font-pixel text-[10px] text-rpg-brown/40 uppercase tracking-wide">The Bounty Board is Bare</p>
             </div>
           )}
         </div>
 
         {completedQuests.length > 0 && (
-          <div className="mt-16 pt-10 border-t-4 border-[#3d2b1f]/10">
-            <h3 className="font-pixel text-[10px] text-[#3d2b1f]/40 uppercase mb-6 tracking-widest flex items-center gap-3">
-              <span className="h-[1px] flex-1 bg-[#3d2b1f]/10"></span>
+          <div className="mt-16 pt-10 border-t-4 border-rpg-brown/10">
+            <h3 className="font-pixel text-[10px] text-rpg-brown/40 uppercase mb-6 tracking-wide flex items-center gap-3 font-bold">
+              <span className="h-[1px] flex-1 bg-rpg-brown/10"></span>
               Archived Victories
-              <span className="h-[1px] flex-1 bg-[#3d2b1f]/10"></span>
+              <span className="h-[1px] flex-1 bg-rpg-brown/10"></span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-60">
               {completedQuests.map(task => (
-                <div key={task.id} className="text-[10px] font-bold text-[#3d2b1f] flex justify-between bg-black/5 p-3 border-2 border-[#3d2b1f]/10 uppercase tracking-tighter">
+                <div key={task.id} className="text-[10px] font-bold text-rpg-brown flex justify-between bg-black/5 p-3 border-2 border-rpg-brown/10 uppercase tracking-wide">
                   <span className="truncate max-w-[70%]">{task.title}</span>
                   <span className="tabular-nums whitespace-nowrap">{task.timeSpent || 0}m LOGGED</span>
                 </div>
@@ -125,23 +125,23 @@ const Quests: React.FC = () => {
             <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary"></div>
             <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary"></div>
             
-            <h1 className="font-pixel text-primary text-center mb-10 uppercase tracking-tighter text-sm">Draft Imperial Decree</h1>
+            <h1 className="font-pixel text-primary text-center mb-10 uppercase tracking-wide text-[10px] font-bold">Draft Imperial Decree</h1>
             <form onSubmit={handleAddTask} className="space-y-8">
               <div>
                 <div className="flex justify-between mb-3">
-                  <label className="text-gray-500 text-[8px] font-pixel uppercase tracking-widest">Objective Designation</label>
+                  <label className="text-gray-500 text-[8px] font-pixel uppercase tracking-widest font-bold">Objective Designation</label>
                 </div>
-                <input required value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/60 text-white p-5 border-2 border-rpg-slate outline-none focus:border-primary font-bold text-lg" placeholder="Enter objective..." />
+                <input required value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none focus:border-primary transition-colors duration-150 font-bold text-lg" placeholder="Enter objective..." />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Investment (Min)</label>
-                  <input type="number" value={newTimeEstimate} onChange={e => setNewTimeEstimate(parseInt(e.target.value))} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none" />
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest font-bold">Investment (Min)</label>
+                  <input type="number" value={newTimeEstimate} onChange={e => setNewTimeEstimate(parseInt(e.target.value))} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none transition-colors duration-150" />
                 </div>
                 <div>
-                   <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Sector Alignment</label>
-                   <select value={newCatId} onChange={e => setNewCatId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]">
+                   <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest font-bold">Sector Alignment</label>
+                   <select value={newCatId} onChange={e => setNewCatId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px] transition-colors duration-150">
                      {user?.categories.map(c => <option key={c.id} value={c.id}>{c.label.toUpperCase()}</option>)}
                    </select>
                 </div>
@@ -149,12 +149,12 @@ const Quests: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Omen Date (Deadline)</label>
-                  <input type="date" value={newDeadline} onChange={e => setNewDeadline(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]" />
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest font-bold">Omen Date (Deadline)</label>
+                  <input type="date" value={newDeadline} onChange={e => setNewDeadline(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px] transition-colors duration-150" />
                 </div>
                 <div>
-                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Link to Great Work</label>
-                  <select value={newGoalId} onChange={e => setNewGoalId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px]">
+                  <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest font-bold">Link to Great Work</label>
+                  <select value={newGoalId} onChange={e => setNewGoalId(e.target.value)} className="w-full bg-black/60 text-white p-4 border-2 border-rpg-slate outline-none font-pixel text-[8px] transition-colors duration-150">
                     <option value="">-- NONE --</option>
                     {user?.goals.map(g => <option key={g.id} value={g.id}>{g.title.toUpperCase()}</option>)}
                   </select>
@@ -162,10 +162,10 @@ const Quests: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest">Tactical Complexity</label>
+                <label className="text-gray-500 text-[8px] font-pixel block mb-3 uppercase tracking-widest font-bold">Tactical Complexity</label>
                 <div className="grid grid-cols-3 gap-3">
                   {['easy','medium','hard'].map(d => (
-                    <button key={d} type="button" onClick={() => setNewDiff(d as any)} className={`py-4 border-2 font-pixel text-[8px] transition-all uppercase ${newDiff === d ? 'bg-primary text-black border-white shadow-lg' : 'border-rpg-slate text-gray-500 hover:text-white'}`}>
+                    <button key={d} type="button" onClick={() => setNewDiff(d as any)} className={`py-4 border-2 font-pixel text-[8px] transition-all duration-150 uppercase font-bold ${newDiff === d ? 'bg-primary text-black border-white shadow-lg' : 'border-rpg-slate text-gray-500 hover:text-white'}`}>
                       {d}
                     </button>
                   ))}
@@ -173,8 +173,8 @@ const Quests: React.FC = () => {
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-5 bg-gray-700 text-white font-pixel text-[9px] border-b-4 border-black uppercase tracking-tighter">Retreat</button>
-                <button type="submit" className="flex-[2] py-5 bg-primary text-black font-pixel text-[9px] border-b-4 border-r-4 border-[#7a7a35] uppercase tracking-tighter">Commence Quest</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-4 px-8 bg-rpg-slate text-white font-pixel text-[8px] border-b-8 border-r-8 border-rpg-deep-slate hover:bg-[#5a758f] active:translate-y-2 active:translate-x-2 active:border-b-0 active:border-r-0 transition-colors duration-150 uppercase tracking-wide font-bold">Retreat</button>
+                <button type="submit" className="flex-[2] py-4 px-8 bg-primary text-black font-pixel text-[8px] border-b-8 border-r-8 border-[#b89a0a] hover:bg-yellow-400 active:translate-y-2 active:translate-x-2 active:border-b-0 active:border-r-0 transition-colors duration-150 uppercase tracking-wide font-bold">Commence Quest</button>
               </div>
             </form>
           </div>
@@ -185,7 +185,7 @@ const Quests: React.FC = () => {
 };
 
 const FilterBtn = ({ active, onClick, label, icon }: any) => (
-  <button onClick={onClick} className={`flex items-center gap-3 px-5 py-2.5 border-4 font-bold text-[10px] uppercase tracking-tight transition-all rounded-sm ${active ? 'bg-[#3d2b1f] border-[#3d2b1f] text-primary shadow-md' : 'bg-transparent border-[#3d2b1f]/10 text-[#3d2b1f]/40 hover:border-[#3d2b1f]/40'}`}>
+  <button onClick={onClick} className={`flex items-center gap-3 px-5 py-2.5 border-4 font-bold text-[10px] uppercase tracking-wide transition-all duration-300 rounded-sm ${active ? 'bg-rpg-brown border-rpg-brown text-primary shadow-md' : 'bg-transparent border-rpg-brown/10 text-rpg-brown/40 hover:border-rpg-brown/40'}`}>
     <span className="material-symbols-outlined text-lg">{icon}</span> {label}
   </button>
 );
@@ -200,30 +200,30 @@ const QuestItem = ({ task, categories, goals, onComplete, onDelete }: any) => {
   const isOverdue = deadlineDate ? isPast(deadlineDate) && !task.completed : false;
 
   return (
-    <div className={`bg-[#E8D0AA] border-4 border-[#3d2b1f] p-6 rounded-none shadow-pixel-card group transition-all hover:translate-x-1 hover:shadow-2xl flex flex-col gap-5 relative overflow-hidden ${isOverdue ? 'animate-pulse' : ''}`}>
+    <div className={`bg-[#E8D0AA] border-4 border-rpg-brown p-6 rounded-none shadow-pixel-card group transition-all duration-300 hover:translate-x-1 hover:shadow-2xl flex flex-col gap-5 relative overflow-hidden ${isOverdue ? 'animate-pulse' : ''}`}>
       {isOverdue && (
-        <div className="absolute top-0 right-0 bg-rpg-red text-white text-[6px] font-pixel px-4 py-1 rotate-45 translate-x-4 translate-y-2 shadow-lg z-20">
+        <div className="absolute top-0 right-0 bg-rpg-red text-white text-[6px] font-pixel px-4 py-1 rotate-45 translate-x-4 translate-y-2 shadow-lg z-20 tracking-wider">
           CURSED
         </div>
       )}
-      
+
       <div className="flex items-center gap-5">
-        <div className="shrink-0 size-14 bg-[#3d2b1f] flex items-center justify-center rounded-none border-2 border-black/20 relative shadow-inner">
+        <div className="shrink-0 size-14 bg-rpg-brown flex items-center justify-center rounded-none border-2 border-black/20 relative shadow-inner">
           <span className="material-symbols-outlined text-3xl text-primary">{cat?.icon || 'help'}</span>
-          <div className="absolute -top-2 -right-2 bg-[#3d2b1f] text-primary text-[6px] px-1.5 py-0.5 border border-black font-pixel shadow-sm">
+          <div className="absolute -top-2 -right-2 bg-rpg-brown text-primary text-[6px] px-1.5 py-0.5 border border-black font-pixel shadow-sm uppercase tracking-wider leading-none">
             {alignment}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-[#3d2b1f] font-black text-xl truncate uppercase tracking-tighter italic">{task.title}</h3>
-            <span className={`text-[6px] font-pixel px-1.5 py-0.5 border-2 rounded-sm bg-white/40 shadow-sm ${task.difficulty === 'hard' ? 'text-rpg-red border-rpg-red' : task.difficulty === 'medium' ? 'text-blue-600 border-blue-600' : 'text-rpg-green border-rpg-green'}`}>
+            <h3 className="text-rpg-brown font-black text-xl truncate uppercase tracking-tighter italic">{task.title}</h3>
+            <span className={`text-[6px] font-pixel px-1.5 py-0.5 border-2 rounded-sm bg-white/40 shadow-sm uppercase tracking-wider leading-none ${task.difficulty === 'hard' ? 'text-rpg-red border-rpg-red' : task.difficulty === 'medium' ? 'text-blue-600 border-blue-600' : 'text-rpg-green border-rpg-green'}`}>
               {task.difficulty.toUpperCase()}
             </span>
           </div>
-          <p className="text-[#3d2b1f]/40 text-[9px] font-black uppercase tracking-widest">{cat?.label || 'UNKNOWN'} EXPEDITION</p>
+          <p className="text-rpg-brown/40 text-[8px] font-black uppercase tracking-widest font-pixel">{cat?.label || 'UNKNOWN'} EXPEDITION</p>
           {goal && (
-            <p className="text-primary bg-[#3d2b1f] text-[7px] font-pixel px-1 mt-2 inline-block uppercase">
+            <p className="text-primary bg-rpg-brown text-[7px] font-pixel px-1 mt-2 inline-block uppercase tracking-widest opacity-80">
               FOR: {goal.title}
             </p>
           )}
@@ -231,20 +231,20 @@ const QuestItem = ({ task, categories, goals, onComplete, onDelete }: any) => {
       </div>
 
       {task.deadline && (
-        <div className={`flex items-center gap-2 p-2 border-2 ${isOverdue ? 'bg-rpg-red/10 border-rpg-red/30 text-rpg-red' : 'bg-black/5 border-[#3d2b1f]/10 text-[#3d2b1f]'}`}>
+        <div className={`flex items-center gap-2 p-2 border-2 ${isOverdue ? 'bg-rpg-red/10 border-rpg-red/30 text-rpg-red' : 'bg-black/5 border-rpg-brown/10 text-rpg-brown'}`}>
           <span className="material-symbols-outlined text-sm">hourglass_bottom</span>
-          <span className="text-[8px] font-pixel uppercase tracking-tighter">
+          <span className="text-[8px] font-pixel uppercase tracking-wide font-bold">
             Omen: {isOverdue ? 'EXPIRED' : `${formatDistanceToNow(deadlineDate)} left`}
           </span>
         </div>
       )}
 
       <div className="space-y-2">
-         <div className="flex justify-between items-end text-[9px] font-pixel text-[#3d2b1f]/60 uppercase tracking-tighter">
+         <div className="flex justify-between items-end text-[8px] font-pixel text-rpg-brown/60 uppercase tracking-wide font-bold">
             <span>Mana Expenditure</span>
             <span className="tabular-nums font-black">{task.timeSpent || 0} / {task.timeEstimate || 0}m</span>
          </div>
-         <div className="h-4 w-full bg-[#3d2b1f]/10 rounded-none overflow-hidden relative border-2 border-[#3d2b1f]/20 p-[2px]">
+         <div className="h-4 w-full bg-rpg-brown/10 rounded-none overflow-hidden relative border-2 border-rpg-brown/20 p-[2px]">
            <div className={`h-full transition-all duration-700 ${timeProgress >= 100 ? 'bg-primary' : 'bg-rpg-green'}`} style={{ width: `${timeProgress}%` }}>
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/20"></div>
            </div>
@@ -252,8 +252,8 @@ const QuestItem = ({ task, categories, goals, onComplete, onDelete }: any) => {
       </div>
 
       <div className="flex gap-4 pt-2 mt-auto">
-        <button onClick={onDelete} className="flex-1 py-3 bg-black/5 text-rpg-red font-pixel text-[8px] border-2 border-rpg-red/20 hover:bg-rpg-red/10 hover:border-rpg-red/40 transition-all uppercase">Discard</button>
-        <button onClick={onComplete} className="flex-[2] bg-[#3d2b1f] text-primary font-pixel text-[8px] border-b-4 border-r-4 border-black hover:brightness-125 transition-all flex items-center justify-center gap-3 uppercase shadow-pixel">
+        <button onClick={onDelete} className="flex-1 py-2 px-4 bg-rpg-red text-white font-pixel text-[8px] border-b-8 border-r-8 border-[#8a4235] hover:bg-[#d47560] active:translate-y-2 active:translate-x-2 active:border-b-0 active:border-r-0 transition-colors duration-150 uppercase tracking-wide font-bold">Discard</button>
+        <button onClick={onComplete} className="flex-[2] py-2 px-4 bg-rpg-green text-black font-pixel text-[8px] border-b-8 border-r-8 border-[#5a9440] hover:bg-[#8fd068] active:translate-y-2 active:translate-x-2 active:border-b-0 active:border-r-0 transition-colors duration-150 flex items-center justify-center gap-3 uppercase tracking-wide font-bold shadow-pixel">
           <span className="material-symbols-outlined text-lg">check_circle</span>
           Complete
         </button>
